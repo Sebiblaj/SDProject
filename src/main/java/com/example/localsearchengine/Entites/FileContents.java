@@ -6,10 +6,10 @@ import lombok.NoArgsConstructor;
 
 import jakarta.persistence.*;
 
+@Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
 public class FileContents {
 
     @Id
@@ -23,4 +23,19 @@ public class FileContents {
     @OneToOne
     @JoinColumn(name = "file_id", referencedColumnName = "id")
     private File file;
+
+    public void setContents(String contents) {
+        this.contents = contents;
+        this.preview = generatePreview(contents);
+    }
+
+    private String generatePreview(String text) {
+        if (text == null || text.isEmpty()) {
+            return "";
+        }
+        String[] lines = text.split("\n");
+        int previewLines = Math.min(3, lines.length);
+        return String.join("\n", java.util.Arrays.copyOfRange(lines, 0, previewLines));
+    }
 }
+

@@ -3,28 +3,26 @@ package com.example.localsearchengine.Entites;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import jakarta.persistence.*;
+import java.util.Map;
 
-import java.util.List;
-
-@Data
+@Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
+@Data
 public class Metadata {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-    @Column(nullable = false)
-    private String key;
+    @ElementCollection
+    @CollectionTable(name = "metadata_values", joinColumns = @JoinColumn(name = "metadata_id"))
+    @MapKeyColumn(name = "key")
+    @Column(name = "value")
+    private Map<String, String> values;
 
-    @OneToMany(mappedBy = "metadata", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<MetadataValue> values;
-
-    @OneToOne
-    @JoinColumn(name = "file_id", referencedColumnName = "id")
-    private File file;
+    @Column(name = "file_id")
+    private int fileId;
 }
+

@@ -10,6 +10,17 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  postgres-indexing-log:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata2:/var/lib/postgresql/data
+
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
@@ -35,3 +46,4 @@ services:
 
 volumes:
   pgdata:
+  pgdata2:
