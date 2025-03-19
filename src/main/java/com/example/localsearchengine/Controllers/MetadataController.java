@@ -1,5 +1,6 @@
 package com.example.localsearchengine.Controllers;
 
+import com.example.localsearchengine.DTOs.KeyDTO;
 import com.example.localsearchengine.DTOs.MetadataEntries;
 import com.example.localsearchengine.Entites.Metadata;
 import com.example.localsearchengine.Services.MetadataService;
@@ -55,12 +56,12 @@ public class MetadataController {
     }
 
     @DeleteMapping(value = "deleteMetadataForFile/{id}")
-    public ResponseEntity<String> deleteMetadataForFile(@PathVariable String id,@RequestBody List<String> keys){
+    public ResponseEntity<String> deleteMetadataForFile(@PathVariable String id,@RequestBody List<KeyDTO> keys){
         return metadataService.deleteMetadataForFile(id,keys) != null ? ResponseEntity.ok("Metadata deleted successfully") : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping(value = "deleteMetadataForFile/{path}/{filename}")
-    public ResponseEntity<String> deleteMetadataForFile(@PathVariable String path,@PathVariable String filename,@RequestBody List<String> keys){
+    public ResponseEntity<String> deleteMetadataForFile(@PathVariable String path,@PathVariable String filename,@RequestBody List<KeyDTO> keys){
         return metadataService.deleteMetadataForFile(path, filename, keys) != null ? ResponseEntity.ok("Metadata deleted successfully") : ResponseEntity.notFound().build();
     }
 }

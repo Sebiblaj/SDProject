@@ -1,5 +1,6 @@
 package com.example.localsearchengine.Services;
 
+import com.example.localsearchengine.DTOs.FileTypeDTO;
 import com.example.localsearchengine.Entites.FileType;
 import com.example.localsearchengine.Persistence.FileTypeRepository;
 import jakarta.transaction.Transactional;
@@ -17,11 +18,11 @@ public class FileTypeService {
 
     public List<FileType> getFileTypes() {return fileTypeRepository.findAll();}
 
-    public List<FileType> getFileTypesMatching(String pattern) {
+    public List<FileType> getFileTypesMatching(FileTypeDTO fileTypeDTO) {
         List<FileType> fileTypes = getFileTypes();
-        List<FileType> finalFileTypes = new ArrayList<FileType>();
+        List<FileType> finalFileTypes = new ArrayList<>();
         for (FileType fileType : fileTypes) {
-            if(fileType.getType().contains(pattern)) {
+            if(fileType.getType().contains(fileTypeDTO.getType())) {
                 finalFileTypes.add(fileType);
             }
         }
@@ -29,20 +30,28 @@ public class FileTypeService {
     }
 
     @Transactional
-    public String saveFileType(String type) {
-        FileType fileType = new FileType(null,type);
+    public String saveFileType(FileTypeDTO fileTypeDTO) {
+        FileType fileType = new FileType();
+        fileType.setType(fileTypeDTO.getType());
+
         fileTypeRepository.save(fileType);
+
         return "FileType saved successfully";
     }
 
+
     @Transactional
-    public String deleteFileType(String type) {
+    public String deleteFileType(FileTypeDTO fileTypeDTO) {
         List<FileType> fileTypes = getFileTypes();
         for (FileType fileType : fileTypes) {
-            if(fileType.getType().equals(type)) {
+            if(fileType.getType().equals(fileTypeDTO.getType())) {
                 fileTypeRepository.delete(fileType);
             }
         }
         return "FileType deleted successfully";
+    }
+
+    public Boolean checkFileType(FileTypeDTO fileTypeDTO) {
+        return fileTypeRepository.existsByFileType(fileTypeDTO.getType());
     }
 }

@@ -20,6 +20,9 @@ public class FileContents {
 
     private String preview;
 
+    @Column(columnDefinition = "tsvector")
+    private String searchVector;
+
     @OneToOne
     @JoinColumn(name = "file_id", referencedColumnName = "id")
     private File file;

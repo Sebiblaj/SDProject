@@ -1,6 +1,8 @@
 package com.example.localsearchengine.Services;
 
-import com.example.localsearchengine.DTOs.TagsList;
+import com.example.localsearchengine.DTOs.FileDTO;
+import com.example.localsearchengine.DTOs.MetadataEntries;
+import com.example.localsearchengine.DTOs.Tag;
 import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.Entites.FileTags;
 import com.example.localsearchengine.Entites.FileType;
@@ -59,25 +61,74 @@ public class FileService {
         return file != null ? file.getType() : null;
     }
 
-    public File getFileById(int id){return fileRepository.findById(String.valueOf(id)).orElse(null);}
+    public File getFileById(String id){return fileRepository.findById(id).orElse(null);}
+
+    public File getFileById(String path,String filename){return fileRepository.getFileByPathAndFilename(path, filename);}
 
     @Transactional
-    public File addFile(File file) { return this.fileRepository.save(file);}
+    public File addFile(FileDTO file) {
+        File newFile = new File();
+        newFile.setFilename(file.getFilename());
+        newFile.setPath(file.getPath());
+        List<FileTags> tags = new ArrayList<>();
+        for(String tag : file.getTags()){
+            FileTags fileTags = new FileTags();
+            fileTags.setTag(tag);
+            tags.add(fileTags);
+        }
+        newFile.setTags(tags);
+        newFile.setFilesize(file.getFilesize());
+        newFile.setAccessedAt(file.getAccessedAt());
+        newFile.setCreatedAt(file.getCreatedAt());
+        newFile.setExtension(file.getExtension());
+        newFile.setUpdatedAt(file.getUpdatedAt());
 
-    @Transactional
-    public String addMultipleFiles(List<File> files) {
-        this.fileRepository.saveAll(files) ;
-        return files.size() + " files added";
+        FileType fileType = fileTypeRepository.getFileTypeByType(file.getType());
+        if(fileType==null){return null;}
+        newFile.setType(fileType);
+        return this.fileRepository.save(newFile);
     }
 
     @Transactional
-    public File updateFile(int id, Map<String, String> request) {
-        File oldFile = fileRepository.findById(String.valueOf(id)).orElse(null);
+    public String addMultipleFiles(List<FileDTO> files) {
+        List<File> fileList = new ArrayList<>();
+        for(FileDTO file : files) {
+            File newFile = new File();
+            newFile.setFilename(file.getFilename());
+            newFile.setPath(file.getPath());
+            List<FileTags> tags = new ArrayList<>();
+            for (String tag : file.getTags()) {
+                FileTags fileTags = new FileTags();
+                fileTags.setTag(tag);
+                tags.add(fileTags);
+            }
+            newFile.setTags(tags);
+            newFile.setFilesize(file.getFilesize());
+            newFile.setAccessedAt(file.getAccessedAt());
+            newFile.setCreatedAt(file.getCreatedAt());
+            newFile.setExtension(file.getExtension());
+            newFile.setUpdatedAt(file.getUpdatedAt());
+
+            FileType fileType = fileTypeRepository.getFileTypeByType(file.getType());
+            if (fileType == null) {
+                return null;
+            }
+            newFile.setType(fileType);
+            fileList.add(newFile);
+        }
+        if(fileList.isEmpty()){return null;}
+        this.fileRepository.saveAll(fileList);
+        return "Files added successfully";
+    }
+
+    @Transactional
+    public File updateFile(String id, List<MetadataEntries> request) {
+        File oldFile = fileRepository.findById(id).orElse(null);
         if (oldFile == null) {
             throw new RuntimeException("File not found!");
         }
 
-        for (Map.Entry<String, String> entry : request.entrySet()) {
+        for (MetadataEntries entry : request) {
             String fieldName = entry.getKey();
             String newValue = entry.getValue();
 
@@ -97,11 +148,46 @@ public class FileService {
     }
 
     @Transactional
-    public String deleteFileById(int id) {
-        if(fileRepository.findById(String.valueOf(id)).isEmpty()) {
+    public File updateFile(String path,String filename, List<MetadataEntries> request) {
+        File oldFile = fileRepository.getFileByPathAndFilename(path, filename);
+        if (oldFile == null) {
+            throw new RuntimeException("File not found!");
+        }
+
+        for (MetadataEntries entry : request) {
+            String fieldName = entry.getKey();
+            String newValue = entry.getValue();
+
+            try {
+                Field field = File.class.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                Object convertedValue = convertValue(field.getType(), newValue);
+
+                field.set(oldFile, convertedValue);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException("Error updating field: " + fieldName, e);
+            }
+        }
+
+        return fileRepository.save(oldFile);
+    }
+
+    @Transactional
+    public String deleteFile(String id) {
+        if(fileRepository.findById(id).isPresent()) {
             return "File not found";
         }
-        fileRepository.deleteById(String.valueOf(id));
+        fileRepository.deleteById(id);
+        return "File deleted";
+    }
+
+    @Transactional
+    public String deleteFile(String path,String filename) {
+        if(fileRepository.getFileByPathAndFilename(path, filename) != null) {
+            return "File not found";
+        }
+        fileRepository.deleteByPathAndFilename(path,filename);
         return "File deleted";
     }
 
@@ -140,26 +226,28 @@ public class FileService {
     The following methods are for the tags
      */
 
-    public TagsList getTagsForFile(String id){
+    public List<Tag> getTagsForFile(String id){
         List<FileTags> fileTags = fileRepository.findTagsForFile(id);
         if(!fileTags.isEmpty()) {
-            TagsList tagsList = new TagsList();
+            List<Tag> tags = new ArrayList<>();
+            Tag tag = new Tag();
             fileTags.forEach(fileTag -> {
-                tagsList.getTags().add(fileTag.getTag());
+                tags.add(new Tag(fileTag.getTag()));
             });
-            return tagsList;
+            return tags;
         }
         return null;
     }
 
-    public TagsList getTagsForFile(String path, String filename) {
+    public List<Tag> getTagsForFile(String path, String filename) {
         List<FileTags> fileTags = fileRepository.findTagsForFile(path, filename);
         if(!fileTags.isEmpty()) {
-            TagsList tagsList = new TagsList();
+            List<Tag> tags = new ArrayList<>();
+            Tag tag = new Tag();
             fileTags.forEach(fileTag -> {
-                tagsList.getTags().add(fileTag.getTag());
+                tags.add(new Tag(fileTag.getTag()));
             });
-            return tagsList;
+            return tags;
         }
         return null;
     }
@@ -179,20 +267,22 @@ public class FileService {
         return files;
     }
 
-    public List<File> getFilesByTag(TagsList tags) {
+    public List<File> getFilesByTag(List<Tag> tags) {
         List<File> files = new ArrayList<>();
-        for(String tagName : tags.getTags()) {
-            files.addAll(fileRepository.findFilesForTag(tagName));
+        for(Tag tag : tags) {
+            files.addAll(fileRepository.findFilesForTag(tag.getTag()));
         }
         return files;
     }
 
     @Transactional
-    public String addTagsToFile(String id,TagsList tags) {
+    public String addTagsToFile(String id, List<Tag> tags) {
         File oldFile = fileRepository.findById(String.valueOf(id)).orElse(null);
         if (oldFile != null) {
-            for(String tagName : tags.getTags()) {
-                FileTags fileTags = new FileTags(null,oldFile,tagName);
+            for(Tag tag : tags) {
+                FileTags fileTags = new FileTags();
+                fileTags.setTag(tag.getTag());
+                fileTags.setFile(oldFile);
                 if(fileTagsRepository.findById(String.valueOf(id)).isEmpty()) {
                     fileTagsRepository.save(fileTags);
                 }
@@ -204,11 +294,13 @@ public class FileService {
     }
 
     @Transactional
-    public String addTagsToFile(String path,String filename,TagsList tags) {
+    public String addTagsToFile(String path, String filename, List<Tag> tags) {
         File oldFile = fileRepository.getFileByPathAndFilename(path, filename);
         if (oldFile != null) {
-            for(String tagName : tags.getTags()) {
-                FileTags fileTags = new FileTags(null,oldFile,tagName);
+            for(Tag tag : tags) {
+                FileTags fileTags = new FileTags();
+                fileTags.setTag(tag.getTag());
+                fileTags.setFile(oldFile);
                 if(fileTagsRepository.findById(String.valueOf(oldFile.getId())).isEmpty()) {
                     fileTagsRepository.save(fileTags);
                 }
@@ -220,13 +312,14 @@ public class FileService {
     }
 
     @Transactional
-    public String deleteTagsForFile(String path, String filename, TagsList tags) {
+    public String deleteTagsForFile(String path, String filename, List<Tag> tags) {
         File oldFile = fileRepository.getFileByPathAndFilename(path, filename);
 
         if (oldFile != null) {
             List<FileTags> fileTags = oldFile.getTags();
 
-            fileTags.removeIf(fileTag -> tags.getTags().contains(fileTag.getTag()));
+            fileTags.removeIf(fileTag -> tags.stream()
+                    .anyMatch(tag -> tag.getTag().equals(fileTag.getTag())));
 
             oldFile.setTags(fileTags);
             fileRepository.save(oldFile);
@@ -236,13 +329,15 @@ public class FileService {
         return "File not found";
     }
 
+
     @Transactional
-    public String deleteTagsForFile(String id,TagsList tags) {
+    public String deleteTagsForFile(String id, List<Tag> tags) {
         File oldFile = fileRepository.findById(id).orElse(null);
         if (oldFile != null) {
             List<FileTags> fileTags = oldFile.getTags();
 
-            fileTags.removeIf(fileTag -> tags.getTags().contains(fileTag.getTag()));
+            fileTags.removeIf(fileTag -> tags.stream()
+                    .anyMatch(tag -> tag.getTag().equals(fileTag.getTag())));
 
             oldFile.setTags(fileTags);
             fileRepository.save(oldFile);
@@ -272,40 +367,6 @@ public class FileService {
             oldFile.getTags().clear();
             fileRepository.save(oldFile);
             return "Tags removed";
-        }
-        return null;
-    }
-
-    @Transactional
-    public String replaceTagsForFile(String path, String filename, TagsList tags) {
-        File oldFile = fileRepository.getFileByPathAndFilename(path, filename);
-        if (oldFile != null) {
-            oldFile.getTags().clear();
-            List<FileTags> fileTags = new ArrayList<>();
-            for(String tag: tags.getTags()) {
-                FileTags fileTag = new FileTags(null,oldFile,tag);
-                fileTags.add(fileTag);
-            }
-            oldFile.setTags(fileTags);
-            fileRepository.save(oldFile);
-            return "Tags replaced";
-        }
-        return null;
-    }
-
-    @Transactional
-    public String replaceTagsForFile(String id, TagsList tags) {
-        File oldFile = fileRepository.findById(id).orElse(null);
-        if (oldFile != null) {
-            oldFile.getTags().clear();
-            List<FileTags> fileTags = new ArrayList<>();
-            for(String tag: tags.getTags()) {
-                FileTags fileTag = new FileTags(null,oldFile,tag);
-                fileTags.add(fileTag);
-            }
-            oldFile.setTags(fileTags);
-            fileRepository.save(oldFile);
-            return "Tags replaced";
         }
         return null;
     }

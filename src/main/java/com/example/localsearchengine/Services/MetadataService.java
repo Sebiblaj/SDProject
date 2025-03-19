@@ -1,5 +1,6 @@
 package com.example.localsearchengine.Services;
 
+import com.example.localsearchengine.DTOs.KeyDTO;
 import com.example.localsearchengine.DTOs.MetadataEntries;
 import com.example.localsearchengine.Entites.Metadata;
 import com.example.localsearchengine.Persistence.FileRepository;
@@ -85,24 +86,24 @@ public class MetadataService {
     }
 
     @Transactional
-    public String deleteMetadataForFile(String id,List<String> keys){
+    public String deleteMetadataForFile(String id,List<KeyDTO> keys){
         Metadata metadata = metadataRepository.getMetadataForFile(id);
         if(metadata == null){return null;}
-        for(String key : keys){
-            metadata.getValues().remove(key);
+        for(KeyDTO key : keys){
+            metadata.getValues().remove(key.getKey());
         }
         metadataRepository.save(metadata);
         return "Metadata deleted";
     }
 
     @Transactional
-    public String deleteMetadataForFile(String path,String filename,List<String> keys){
+    public String deleteMetadataForFile(String path,String filename,List<KeyDTO> keys){
         Integer fileId = fileRepository.getFileIdByPathAndFilename(path, filename);
         if(fileId == null){return null;}
         Metadata metadata = metadataRepository.getMetadataForFile(String.valueOf(fileId));
         if(metadata == null){return null;}
-        for(String key : keys){
-            metadata.getValues().remove(key);
+        for(KeyDTO key : keys){
+            metadata.getValues().remove(key.getKey());
         }
         metadataRepository.save(metadata);
         return "Metadata deleted";

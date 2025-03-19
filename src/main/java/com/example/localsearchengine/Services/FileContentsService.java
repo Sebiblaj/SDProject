@@ -1,6 +1,8 @@
 package com.example.localsearchengine.Services;
 
+import com.example.localsearchengine.DTOs.ContentsDTO;
 import com.example.localsearchengine.DTOs.FileSearchResult;
+import com.example.localsearchengine.DTOs.KeywordDTO;
 import com.example.localsearchengine.Entites.FileContents;
 import com.example.localsearchengine.Persistence.FileContentsRepository;
 import jakarta.transaction.Transactional;
@@ -31,38 +33,48 @@ public class FileContentsService {
         return fileContents != null ? fileContents.getPreview() : null;
     }
 
-    public FileSearchResult searchInFileById(String id, String keyword) {
-        Optional<FileContents> fileContents = fileContentsRepository.findById(id);
-        if(fileContents.isPresent()) {
-            FileContents fileContents1 = fileContents.get();
-            return searchInContents(fileContents1.getFile().getFilename(),fileContents1.getContents(),keyword);
+    public FileSearchResult searchInFileById(String id, KeywordDTO keyword) {
+        FileContents fileContents = fileContentsRepository.searchFilesByKeyword(keyword.getKeyword(), Integer.valueOf(id));
+        if(fileContents != null) {
+            return searchInContents(fileContents.getFile().getFilename(),fileContents.getContents(),keyword.getKeyword());
         }
         return null;
     }
 
-    public FileSearchResult searchInFileByPathAndName(String path, String filename, String keyword) {
-        FileContents fileContents = fileContentsRepository.getFileContentsByPathAndFilename(path, filename);
+    public FileSearchResult searchInFileByPathAndName(String path, String filename, KeywordDTO keyword) {
+        FileContents fileContents = fileContentsRepository.searchFilesByKeyword(path, filename, keyword.getKeyword());
         if(fileContents != null) {
-            return searchInContents(fileContents.getFile().getFilename(),fileContents.getContents(),keyword);
+            return searchInContents(fileContents.getFile().getFilename(),fileContents.getContents(),keyword.getKeyword());
         }
         return null;
+    }
+
+    public List<FileSearchResult> searchInFilesForKeyword(KeywordDTO keyword) {
+        List<FileContents> fileContents = fileContentsRepository.searchFilesByKeyword(keyword.getKeyword());
+        List<FileSearchResult> fileSearchResults = new ArrayList<>();
+        if(!fileContents.isEmpty()) {
+            for(FileContents fileContent: fileContents) {
+                fileSearchResults.add(searchInContents(fileContent.getFile().getFilename(),fileContent.getContents(),keyword.getKeyword()));
+            }
+        }
+        return fileSearchResults;
     }
 
     @Transactional
-    public FileContents setFileContents(String id, String contents) {
+    public FileContents setFileContents(String id, ContentsDTO contentsDTO) {
         FileContents fileContents = fileContentsRepository.findById(id).orElse(null);
         if(fileContents != null) {
-            fileContents.setContents(contents);
+            fileContents.setContents(contentsDTO.getContent());
             return  fileContentsRepository.save(fileContents);
         }
         return null;
     }
 
     @Transactional
-    public FileContents setFileContents(String path,String filename, String contents) {
+    public FileContents setFileContents(String path,String filename, ContentsDTO contentsDTO) {
         FileContents fileContents = fileContentsRepository.getFileContentsByPathAndFilename(path,filename);
         if(fileContents != null) {
-            fileContents.setContents(contents);
+            fileContents.setContents(contentsDTO.getContent());
             return  fileContentsRepository.save(fileContents);
         }
         return null;

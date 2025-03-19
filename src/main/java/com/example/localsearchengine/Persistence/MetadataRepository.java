@@ -11,7 +11,6 @@ import java.util.List;
 @Repository
 public interface MetadataRepository extends JpaRepository<Metadata, Long> {
 
-    @Modifying
     @Query("SELECT m from Metadata m WHERE m.fileId = :id")
     Metadata getMetadataForFile(String id);
 
