@@ -1,6 +1,7 @@
 package com.example.localsearchengine.Persistence;
 
 import com.example.localsearchengine.DTOs.KeywordDTO;
+import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.Entites.FileContents;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -23,8 +24,21 @@ public interface FileContentsRepository extends JpaRepository<FileContents, Stri
             nativeQuery = true)
     FileContents searchFilesByKeyword(@Param("keyword") String keyword, @Param("id") Integer id);
 
-    @Query(value = "SELECT f FROM file_contents f WHERE (f.file_id IN (SELECT id FROM file WHERE path = :path AND filename = :filename)) AND f.search_vector @@ to_tsquery('english', :keyword)",
+    @Query(value = "SELECT * FROM file_contents f WHERE f.file_id = (SELECT id FROM file WHERE path = :path AND filename = :filename) AND f.search_vector @@ to_tsquery('english', :keyword)",
             nativeQuery = true)
     FileContents searchFilesByKeyword(@Param("keyword") String keyword, @Param("path") String path, @Param("filename") String filename);
+
+
+    FileContents findByFile(File file);
+
+    @Query("SELECT f.contents from FileContents f WHERE f.file.id = :id")
+    String findByFileId(@Param("id") String id);
+
+    @Query("SELECT f from FileContents f WHERE f.file.id = :id")
+    FileContents findFileContentsByFileId(@Param("id") String id);
+
+    @Query("SELECT f.preview from FileContents f WHERE f.file.id = :id")
+    String findPreviewByFileId(@Param("id") String id);
+
 }
 

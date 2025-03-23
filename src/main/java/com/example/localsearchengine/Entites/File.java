@@ -1,6 +1,5 @@
 package com.example.localsearchengine.Entites;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -26,8 +25,7 @@ public class File {
     @Column(nullable = false)
     private String path;
 
-    @JsonInclude
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "type_id")
     private FileType type;
 
@@ -44,7 +42,8 @@ public class File {
 
     private Timestamp accessedAt;
 
-    @JsonInclude
-    @OneToMany(mappedBy = "file", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "file", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<FileTags> tags;
+
+
 }

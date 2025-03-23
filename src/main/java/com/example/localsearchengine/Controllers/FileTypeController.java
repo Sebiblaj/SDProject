@@ -19,6 +19,9 @@ public class FileTypeController {
     @GetMapping(value = "getAllTypes")
     public ResponseEntity<List<FileType>> getAllTypes() {return ResponseEntity.ok(fileTypeService.getFileTypes());}
 
+    @GetMapping(value = "getAllTypesNoId")
+    public ResponseEntity<List<FileTypeDTO>> getAllTypesNoId() {return ResponseEntity.ok(fileTypeService.getFileTypesNoId());}
+
     @GetMapping(value = "checkTypeExists")
     public ResponseEntity<Boolean> checkTypeExists(@RequestBody FileTypeDTO fileTypeDTO) {
         return fileTypeService.checkFileType(fileTypeDTO) ? ResponseEntity.ok(true) : ResponseEntity.notFound().build();

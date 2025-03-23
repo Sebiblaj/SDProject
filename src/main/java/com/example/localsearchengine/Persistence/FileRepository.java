@@ -26,7 +26,7 @@ public interface FileRepository extends JpaRepository<File, String> {
 
     @Modifying
     @Query("DELETE FROM File f WHERE f.path = :path AND f.filename = :filename")
-    void deleteByPathAndFilename(@Param("files") String path,@Param("filename") String filename);
+    void deleteByPathAndFilename(@Param("path") String path,@Param("filename") String filename);
 
     @Query("SELECT f FROM File f WHERE f.filesize > :min AND f.filesize <= :max")
     List<File> findBySizeGreaterThan(@Param("min") Integer min, @Param("max") Integer max);
@@ -42,5 +42,12 @@ public interface FileRepository extends JpaRepository<File, String> {
 
     @Query("SELECT f.id FROM File f WHERE f.path = :path AND f.filename = :filename")
     Integer getFileIdByPathAndFilename(@Param("path") String path, @Param("filename") String filename);
+
+    @Query("SELECT f FROM File f WHERE f.path = :path AND f.filename = :filename")
+    File findFilesByPathAndFilename(@Param("path") String path, @Param("filename") String filename);
+
+    @Query("SELECT f FROM File f WHERE f.path IN :paths AND f.filename IN :filenames")
+    List<File> findFilesByPathAndFilename(@Param("paths") List<String> paths, @Param("filenames") List<String> filenames);
+
 }
 

@@ -6,6 +6,10 @@ import lombok.NoArgsConstructor;
 
 import jakarta.persistence.*;
 
+import org.hibernate.annotations.ColumnTransformer;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 @Entity
 @Data
 @AllArgsConstructor
@@ -21,24 +25,15 @@ public class FileContents {
     private String preview;
 
     @Column(columnDefinition = "tsvector")
+    @ColumnTransformer(read = "search_vector::text", write = "?::tsvector")
     private String searchVector;
 
-    @OneToOne
-    @JoinColumn(name = "file_id", referencedColumnName = "id")
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "file_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_file_contents", value = ConstraintMode.CONSTRAINT))
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private File file;
 
-    public void setContents(String contents) {
-        this.contents = contents;
-        this.preview = generatePreview(contents);
-    }
 
-    private String generatePreview(String text) {
-        if (text == null || text.isEmpty()) {
-            return "";
-        }
-        String[] lines = text.split("\n");
-        int previewLines = Math.min(3, lines.length);
-        return String.join("\n", java.util.Arrays.copyOfRange(lines, 0, previewLines));
-    }
 }
+
 

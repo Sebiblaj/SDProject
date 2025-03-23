@@ -2,6 +2,7 @@ package com.example.localsearchengine.Services;
 
 import com.example.localsearchengine.DTOs.KeyDTO;
 import com.example.localsearchengine.DTOs.MetadataEntries;
+import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.Entites.Metadata;
 import com.example.localsearchengine.Persistence.FileRepository;
 import com.example.localsearchengine.Persistence.MetadataRepository;
@@ -9,7 +10,8 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class MetadataService {
@@ -60,28 +62,63 @@ public class MetadataService {
 
     @Transactional
     public String addMetadataForFile(String path, String filename, List<MetadataEntries> entry) {
-        Integer fileId = fileRepository.getFileIdByPathAndFilename(path, filename);
-        if(fileId == null){return null;}
+        Metadata metadata = metadataRepository.getMetadataForFile(path,filename);
+        Map<String, String> entries = entry.stream()
+                .collect(Collectors.toMap(MetadataEntries::getKey, MetadataEntries::getValue));
 
-        Metadata metadata = getMetadataForFile(String.valueOf(fileId));
-        if(metadata == null){return null;}
+        if (metadata == null) {
+            File file = fileRepository.findFilesByPathAndFilename(path, filename);
+            if (file != null) {
+                Metadata newMetadata = new Metadata();
+                newMetadata.setFile(file);
+                newMetadata.setValues(entries);
 
-        for(MetadataEntries metadataEntry : entry){
-            metadata.getValues().put(metadataEntry.getKey(), metadataEntry.getValue());
+                metadataRepository.save(newMetadata);
+            } else {
+                return null;
+            }
+        } else {
+            Map<String, String> existingEntries = metadata.getValues();
+            if (existingEntries == null) {
+                existingEntries = new HashMap<>();
+            }
+
+            existingEntries.putAll(entries);
+            metadata.setValues(existingEntries);
+
+            metadataRepository.save(metadata);
         }
-        metadataRepository.save(metadata);
         return "Metadata added";
     }
 
     @Transactional
     public String addMetadataForFile(String id, List<MetadataEntries> entry) {
         Metadata metadata = metadataRepository.getMetadataForFile(id);
-        if(metadata == null){return null;}
+        Map<String, String> entries = entry.stream()
+                .collect(Collectors.toMap(MetadataEntries::getKey, MetadataEntries::getValue));
 
-        for(MetadataEntries metadataEntry : entry){
-            metadata.getValues().put(metadataEntry.getKey(), metadataEntry.getValue());
+        if (metadata == null) {
+            Optional<File> file = fileRepository.findById(id);
+            if (file.isPresent()) {
+                Metadata newMetadata = new Metadata();
+                newMetadata.setFile(file.get());
+                newMetadata.setValues(entries);
+
+                metadataRepository.save(newMetadata);
+            } else {
+                return null;
+            }
+        } else {
+            Map<String, String> existingEntries = metadata.getValues();
+            if (existingEntries == null) {
+                existingEntries = new HashMap<>();
+            }
+
+            existingEntries.putAll(entries);
+            metadata.setValues(existingEntries);
+
+            metadataRepository.save(metadata);
         }
-        metadataRepository.save(metadata);
         return "Metadata added";
     }
 

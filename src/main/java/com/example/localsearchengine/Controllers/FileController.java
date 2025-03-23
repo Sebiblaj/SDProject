@@ -1,10 +1,7 @@
 package com.example.localsearchengine.Controllers;
 
-import com.example.localsearchengine.DTOs.FileDTO;
-import com.example.localsearchengine.DTOs.MetadataEntries;
-import com.example.localsearchengine.DTOs.Tag;
+import com.example.localsearchengine.DTOs.*;
 import com.example.localsearchengine.Entites.File;
-import com.example.localsearchengine.DTOs.PathAndName;
 import com.example.localsearchengine.Entites.FileType;
 import com.example.localsearchengine.Services.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +62,7 @@ public class FileController {
     @PostMapping(value = "addMultipleFiles")
     public ResponseEntity<String> addMultipleFiles(@RequestBody List<FileDTO> files) {
         String response = fileService.addMultipleFiles(files);
-        return response != null ? ResponseEntity.ok(response) : ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        return response != null ? ResponseEntity.ok(response) : ResponseEntity.ok("Could not add files");
     }
 
     @PutMapping("updateFile/{id}")
@@ -93,7 +90,7 @@ public class FileController {
     }
 
     @DeleteMapping(value = "/deleteMultipleFilesById")
-    public ResponseEntity<String> deleteMultipleFiles(@RequestBody List<String> fileIds) {
+    public ResponseEntity<String> deleteMultipleFiles(@RequestBody List<FileIdDTO> fileIds) {
         boolean allDeleted = fileService.deleteMultipleFiles(fileIds);
         return allDeleted ? ResponseEntity.ok("All files deleted successfully") : ResponseEntity.status(500).body("Some files could not be deleted");
     }

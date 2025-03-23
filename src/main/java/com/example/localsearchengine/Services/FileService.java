@@ -1,15 +1,13 @@
 package com.example.localsearchengine.Services;
 
-import com.example.localsearchengine.DTOs.FileDTO;
-import com.example.localsearchengine.DTOs.MetadataEntries;
-import com.example.localsearchengine.DTOs.Tag;
+import com.example.localsearchengine.DTOs.*;
 import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.Entites.FileTags;
 import com.example.localsearchengine.Entites.FileType;
 import com.example.localsearchengine.Persistence.FileRepository;
-import com.example.localsearchengine.DTOs.PathAndName;
 import com.example.localsearchengine.Persistence.FileTagsRepository;
 import com.example.localsearchengine.Persistence.FileTypeRepository;
+import com.example.localsearchengine.Persistence.MetadataRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -31,6 +29,9 @@ public class FileService {
 
     @Autowired
     private FileTypeRepository fileTypeRepository;
+
+    @Autowired
+    private MetadataRepository metadataRepository;
 
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
@@ -91,33 +92,59 @@ public class FileService {
 
     @Transactional
     public String addMultipleFiles(List<FileDTO> files) {
-        List<File> fileList = new ArrayList<>();
-        for(FileDTO file : files) {
+        if (files.isEmpty()) {
+            return "No files provided";
+        }
+
+        List<String> filenames = files.stream().map(FileDTO::getFilename).collect(Collectors.toList());
+        List<String> paths = files.stream().map(FileDTO::getPath).collect(Collectors.toList());
+
+        List<File> existingFiles = fileRepository.findFilesByPathAndFilename(paths,filenames);
+
+        Set<String> existingFileKeys = existingFiles.stream()
+                .map(file -> file.getPath() + "|" + file.getFilename())
+                .collect(Collectors.toSet());
+
+        Map<String, FileType> fileTypeMap = fileTypeRepository.findAll().stream()
+                .collect(Collectors.toMap(FileType::getType, fileType -> fileType));
+
+        List<File> newFiles = new ArrayList<>();
+
+        for (FileDTO file : files) {
+            String key = file.getPath() + "|" + file.getFilename();
+            if (existingFileKeys.contains(key)) {
+                continue;
+            }
+
             File newFile = new File();
             newFile.setFilename(file.getFilename());
             newFile.setPath(file.getPath());
-            List<FileTags> tags = new ArrayList<>();
-            for (String tag : file.getTags()) {
-                FileTags fileTags = new FileTags();
-                fileTags.setTag(tag);
-                tags.add(fileTags);
-            }
+
+            List<FileTags> tags = file.getTags().stream()
+                    .map(tag -> new FileTags(null,newFile,tag))
+                    .toList();
             newFile.setTags(tags);
+
             newFile.setFilesize(file.getFilesize());
             newFile.setAccessedAt(file.getAccessedAt());
             newFile.setCreatedAt(file.getCreatedAt());
             newFile.setExtension(file.getExtension());
             newFile.setUpdatedAt(file.getUpdatedAt());
 
-            FileType fileType = fileTypeRepository.getFileTypeByType(file.getType());
+            FileType fileType = fileTypeMap.get(file.getType());
             if (fileType == null) {
-                return null;
+                return "Error: FileType '" + file.getType() + "' not found";
             }
             newFile.setType(fileType);
-            fileList.add(newFile);
+
+            newFiles.add(newFile);
         }
-        if(fileList.isEmpty()){return null;}
-        this.fileRepository.saveAll(fileList);
+
+        if (newFiles.isEmpty()) {
+            return "No new files to add";
+        }
+
+        fileRepository.saveAll(newFiles);
         return "Files added successfully";
     }
 
@@ -196,7 +223,11 @@ public class FileService {
     public List<File> searchFilesByExtension(String ext) { return fileRepository.findAllByExtension(ext); }
 
     @Transactional
-    public boolean deleteMultipleFiles(List<String> files) { fileRepository.deleteAllById(files); return !files.isEmpty();}
+    public boolean deleteMultipleFiles(List<FileIdDTO> files) {
+        List<String> fileIds = files.stream().map(FileIdDTO::getId).collect(Collectors.toList());
+        metadataRepository.deleteMetadataForFiles(fileIds);
+        fileRepository.deleteAllById(fileIds); return !files.isEmpty();
+    }
 
     @Transactional
     public boolean deleteByPathAndFilename(List<PathAndName> files) {

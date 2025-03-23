@@ -18,6 +18,17 @@ public class FileTypeService {
 
     public List<FileType> getFileTypes() {return fileTypeRepository.findAll();}
 
+    public List<FileTypeDTO> getFileTypesNoId() {
+        List<FileType> fileTypes = fileTypeRepository.findAll();
+        List<FileTypeDTO> fileTypeDTOs = new ArrayList<>();
+        for (FileType fileType : fileTypes) {
+            FileTypeDTO fileTypeDTO = new FileTypeDTO();
+            fileTypeDTO.setType(fileType.getType());
+            fileTypeDTOs.add(fileTypeDTO);
+        }
+        return fileTypeDTOs;
+    }
+
     public List<FileType> getFileTypesMatching(FileTypeDTO fileTypeDTO) {
         List<FileType> fileTypes = getFileTypes();
         List<FileType> finalFileTypes = new ArrayList<>();

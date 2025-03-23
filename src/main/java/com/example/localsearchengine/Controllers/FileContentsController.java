@@ -1,8 +1,6 @@
 package com.example.localsearchengine.Controllers;
 
-import com.example.localsearchengine.DTOs.ContentsDTO;
-import com.example.localsearchengine.DTOs.FileSearchResult;
-import com.example.localsearchengine.DTOs.KeywordDTO;
+import com.example.localsearchengine.DTOs.*;
 import com.example.localsearchengine.Entites.FileContents;
 import com.example.localsearchengine.Services.FileContentsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,14 +17,14 @@ public class FileContentsController {
     private FileContentsService fileContentsService;
 
     @GetMapping(value = "getFileContents/{id}")
-    public ResponseEntity<FileContents> getFileContentsById(@PathVariable String id) {
-        FileContents fileContents = fileContentsService.getFileContents(id);
+    public ResponseEntity<String> getFileContentsById(@PathVariable String id) {
+        String fileContents = fileContentsService.getFileContents(id);
         return fileContents != null ? ResponseEntity.ok(fileContents) : ResponseEntity.notFound().build();
     }
 
     @GetMapping(value = "getFileContents/{path}/{filename}")
-    public ResponseEntity<FileContents> getFileByPathAndName(@PathVariable String path,@PathVariable String filename) {
-        FileContents fileContents = fileContentsService.getFileContents(path,filename);
+    public ResponseEntity<String> getFileByPathAndName(@PathVariable String path,@PathVariable String filename) {
+        String fileContents = fileContentsService.getFileContents(path,filename);
         return fileContents !=null ? ResponseEntity.ok(fileContents) : ResponseEntity.notFound().build();
     }
 
@@ -61,15 +59,21 @@ public class FileContentsController {
     }
 
     @PostMapping(value = "setFileContents/{id}")
-    public ResponseEntity<FileContents> setFileContentsById(@PathVariable String id, @RequestBody ContentsDTO contentsDTO) {
-        FileContents fileContents = fileContentsService.setFileContents(id,contentsDTO);
-        return fileContents != null ? ResponseEntity.ok(fileContents) : ResponseEntity.notFound().build();
+    public ResponseEntity<String> setFileContentsById(@PathVariable String id, @RequestBody ContentsDTO contentsDTO) {
+        String fileContents = fileContentsService.setFileContents(id,contentsDTO);
+        return fileContents.equals("File Content Added Successfully") ? ResponseEntity.ok(fileContents) : ResponseEntity.notFound().build();
     }
 
     @PostMapping(value = "setFileContents/{path}/{filename}")
-    public ResponseEntity<FileContents> setFileContentsById(@PathVariable String path,@PathVariable String filename, @RequestBody ContentsDTO contentsDTO) {
-        FileContents fileContents = fileContentsService.setFileContents(path,filename,contentsDTO);
-        return fileContents != null ? ResponseEntity.ok(fileContents) : ResponseEntity.notFound().build();
+    public ResponseEntity<String> setFileContentsById(@PathVariable String path,@PathVariable String filename, @RequestBody ContentsDTO contentsDTO) {
+        String fileContents = fileContentsService.setFileContents(path,filename,contentsDTO);
+        return fileContents.equals("Contents Added Successfully") ? ResponseEntity.ok(fileContents) : ResponseEntity.notFound().build();
+    }
+
+    @PostMapping(value = "addMultipleFileContents")
+    public ResponseEntity<String> setFileContentsById(@RequestBody List<FileContentDTO> fileContentDTOS) {
+        String fileContents = fileContentsService.setFileContents(fileContentDTOS);
+        return fileContents.equals("File Content Added Successfully")  ? ResponseEntity.ok("Contents added successfully") : ResponseEntity.ok("Could not load contents");
     }
 
     @DeleteMapping(value = "deleteContentsForFile/{path}/{filename}")
