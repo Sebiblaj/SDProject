@@ -17,7 +17,9 @@ public class IndexingLog {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-    private String fileId;
+    private String filename;
+
+    private String path;
 
     private Timestamp timestamp;
 
