@@ -192,6 +192,82 @@ This modular design ensures **scalability**, **maintainability**, and **separati
 
 ## 4.Classes, Methods and Low-Level Functions
 
-### TODO
+At the **Classes, Methods, and Low-Level Functions** level, we delve into the core implementation of each component within the system. This includes the specific classes, methods, and low-level functions that provide the functionality necessary for file indexing, searching, and managing metadata.
+
+### 1. User Interface (CLI/Web UI)
+
+### CLI Handler:
+- **Classes**:
+    - `CommandLineInterface`: Main class that runs the CLI, handling user input.
+    - `SearchCommand`: Class that processes search queries.
+    - `FileCommand`: Class for file-related commands (e.g., open, preview).
+- **Methods**:
+    - `runSearch(String query)`: Accepts search queries and forwards them to the backend for processing.
+    - `displayResults(List<FileResult> results)`: Displays the search results to the user.
+    - `openFile(String filePath)`: Opens the file selected by the user.
+
+
+## 2. Search API
+
+### Controller Layer:
+- **Classes**:
+    - `SearchController`: The primary controller that handles incoming search queries.
+    - `IndexingController`: Exposes endpoints to initiate file indexing.
+- **Methods**:
+    - `searchFiles(String query)`: Handles the search requests, invoking the service to process queries.
+    - `indexFiles()`: Triggers the file indexing process.
+    - `getSearchResults(String query)`: Returns results after querying the database.
+
+### Service Layer:
+- **Classes**:
+    - `SearchService`: The core service for executing search queries.
+    - `IndexingService`: Manages the file indexing process.
+- **Methods**:
+    - `findFiles(String query)`: Executes a search against the database for matching files.
+    - `processSearchQuery(String query)`: Prepares the query, optimizing it for the query engine.
+    - `startFileIndexing()`: Initiates the scanning and indexing of files from the file system.
+    - `updateMetadata(File file)`: Updates the file's metadata during indexing.
+
+### Persistence Layer:
+- **Classes**:
+    - `FileRepository`: Repository for file data (file paths, names, contents).
+    - `MetadataRepository`: Repository for file metadata (size, type, last modified date).
+    - `IndexingLogRepository`: Repository that logs indexing progress.
+    - `FileContentsRepository`: Repository for storing extracted textual content.
+    - `FileTypeRepository`: Manages different accepted file types for indexing.
+
+- **Methods**:
+    - `saveFile(File file)`: Persists file information into the database.
+    - `saveMetadata(Metadata metadata)`: Saves file metadata.
+    - `saveIndexLog(IndexingLog log)`: Logs the progress of indexing.
+    - `findFileByPath(String path)`: Retrieves a file by its path.
+    - `findFilesByContent(String content)`: Searches for files containing specific content.
+
+---
+
+## 3. Supporting Components
+
+### FileScanner:
+- **Classes**:
+    - `FileScanner`: Scans directories and identifies files.
+    - `FileFilter`: Filters files based on specified criteria (e.g., file type, size).
+- **Methods**:
+    - `scanDirectory(String directoryPath)`: Recursively scans a directory for files.
+    - `getFilteredFiles(List<File> files)`: Filters the list of files based on criteria.
+
+### IndexingProcessor:
+- **Classes**:
+    - `TextExtractor`: Extracts textual content from files.
+    - `MetadataExtractor`: Extracts metadata (e.g., size, type, date modified).
+- **Methods**:
+    - `extractText(File file)`: Extracts text content from a file.
+    - `extractMetadata(File file)`: Extracts metadata from a file.
+
+### QueryEngine:
+- **Classes**:
+    - `QueryEngine`: Optimizes and processes search queries.
+- **Methods**:
+    - `optimizeQuery(String query)`: Optimizes the query for better search performance.
+    - `executeQuery(String query)`: Executes the optimized query and retrieves results.
 
 
