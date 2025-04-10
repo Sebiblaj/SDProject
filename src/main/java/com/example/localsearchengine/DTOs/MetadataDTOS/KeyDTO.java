@@ -1,4 +1,4 @@
-package com.example.localsearchengine.DTOs;
+package com.example.localsearchengine.DTOs.MetadataDTOS;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ContentsDTO {
+public class KeyDTO {
 
-    private String content;
+    private String key;
 }

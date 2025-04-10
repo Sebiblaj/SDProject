@@ -1,4 +1,4 @@
-package com.example.localsearchengine.DTOs;
+package com.example.localsearchengine.DTOs.FileDTOS;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,8 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class FileFullContents {
+public class PathAndName {
 
-    private FileDTO file;
-    private ContentsDTO contents;
+    private String path;
+    private String name;
 }

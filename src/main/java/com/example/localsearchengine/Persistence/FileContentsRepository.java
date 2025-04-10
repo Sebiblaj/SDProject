@@ -1,6 +1,5 @@
 package com.example.localsearchengine.Persistence;
 
-import com.example.localsearchengine.DTOs.KeywordDTO;
 import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.Entites.FileContents;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,7 +26,6 @@ public interface FileContentsRepository extends JpaRepository<FileContents, Stri
     @Query(value = "SELECT * FROM file_contents f WHERE f.file_id = (SELECT id FROM file WHERE path = :path AND filename = :filename) AND f.search_vector @@ to_tsquery('english', :keyword)",
             nativeQuery = true)
     FileContents searchFilesByKeyword(@Param("keyword") String keyword, @Param("path") String path, @Param("filename") String filename);
-
 
     FileContents findByFile(File file);
 

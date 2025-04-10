@@ -1,8 +1,9 @@
 package com.example.localsearchengine.Persistence;
 
 import com.example.localsearchengine.Entites.File;
-import com.example.localsearchengine.DTOs.PathAndName;
+import com.example.localsearchengine.DTOs.FileDTOS.PathAndName;
 import com.example.localsearchengine.Entites.FileTags;
+import com.example.localsearchengine.Entites.Metadata;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -10,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public interface FileRepository extends JpaRepository<File, String> {
@@ -29,19 +31,13 @@ public interface FileRepository extends JpaRepository<File, String> {
     void deleteByPathAndFilename(@Param("path") String path,@Param("filename") String filename);
 
     @Query("SELECT f FROM File f WHERE f.filesize > :min AND f.filesize <= :max")
-    List<File> findBySizeGreaterThan(@Param("min") Integer min, @Param("max") Integer max);
-
-    @Query("SELECT f.tags FROM File f WHERE f.id = :id")
-    List<FileTags> findTagsForFile(@Param("id") String id);
+    List<File> findBySizeGreaterThan(@Param("min") String min, @Param("max") String max);
 
     @Query("SELECT f.tags FROM File f WHERE f.path = :path AND f.filename = :filename")
     List<FileTags> findTagsForFile(@Param("path") String path, @Param("filename") String filename);
 
     @Query("SELECT f FROM File f JOIN f.tags t WHERE t.tag = :tag")
     List<File> findFilesForTag(@Param("tag") String tag);
-
-    @Query("SELECT f.id FROM File f WHERE f.path = :path AND f.filename = :filename")
-    Integer getFileIdByPathAndFilename(@Param("path") String path, @Param("filename") String filename);
 
     @Query("SELECT f FROM File f WHERE f.path = :path AND f.filename = :filename")
     File findFilesByPathAndFilename(@Param("path") String path, @Param("filename") String filename);

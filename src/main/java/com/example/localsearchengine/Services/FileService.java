@@ -1,13 +1,18 @@
 package com.example.localsearchengine.Services;
 
-import com.example.localsearchengine.DTOs.*;
+import com.example.localsearchengine.DTOs.FileDTOS.FileDTO;
+import com.example.localsearchengine.DTOs.FileDTOS.PathAndName;
+import com.example.localsearchengine.DTOs.FileDTOS.ReturnedFileDTO;
+import com.example.localsearchengine.DTOs.FileDTOS.Tag;
+import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataEntries;
 import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.Entites.FileTags;
 import com.example.localsearchengine.Entites.FileType;
 import com.example.localsearchengine.Persistence.FileRepository;
 import com.example.localsearchengine.Persistence.FileTagsRepository;
 import com.example.localsearchengine.Persistence.FileTypeRepository;
-import com.example.localsearchengine.Persistence.MetadataRepository;
+import com.example.localsearchengine.ServiceExecutors.FileConvertor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -31,10 +36,13 @@ public class FileService {
     private FileTypeRepository fileTypeRepository;
 
     @Autowired
-    private MetadataRepository metadataRepository;
+    private KafkaTemplate<String, String> kafkaTemplate;
 
     @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private FileConvertor fileConvertor;
 
     private static final String TOPIC = "logs";
 
@@ -47,131 +55,103 @@ public class FileService {
         kafkaTemplate.send(TOPIC, message);
     }
 
-    public List<File> getFiles() {
+    public List<ReturnedFileDTO> getFiles() {
         sendMessage("The user has accessed the files list");
-        return fileRepository.findAll();
+        List<ReturnedFileDTO> returnedFileList = new ArrayList<>();
+        fileRepository.findAll().forEach(file -> {
+            returnedFileList.add(fileConvertor.convert(file));
+        });
+
+       return returnedFileList;
     }
 
-    public FileType getFileTypeByFileId(String id){
-        Optional<File> file = fileRepository.findById(id);
-        return file.map(File::getType).orElse(null);
-    }
-
-    public FileType getFileTypeByFilePath(String path,String filename){
-        File file = fileRepository.getFileByPathAndFilename(path, filename);
-        return file != null ? file.getType() : null;
-    }
-
-    public File getFileById(String id){return fileRepository.findById(id).orElse(null);}
-
-    public File getFileById(String path,String filename){return fileRepository.getFileByPathAndFilename(path, filename);}
-
-    @Transactional
-    public File addFile(FileDTO file) {
-        File newFile = new File();
-        newFile.setFilename(file.getFilename());
-        newFile.setPath(file.getPath());
-        List<FileTags> tags = new ArrayList<>();
-        for(String tag : file.getTags()){
-            FileTags fileTags = new FileTags();
-            fileTags.setTag(tag);
-            tags.add(fileTags);
-        }
-        newFile.setTags(tags);
-        newFile.setFilesize(file.getFilesize());
-        newFile.setAccessedAt(file.getAccessedAt());
-        newFile.setCreatedAt(file.getCreatedAt());
-        newFile.setExtension(file.getExtension());
-        newFile.setUpdatedAt(file.getUpdatedAt());
-
-        FileType fileType = fileTypeRepository.getFileTypeByType(file.getType());
-        if(fileType==null){return null;}
-        newFile.setType(fileType);
-        return this.fileRepository.save(newFile);
+    public ReturnedFileDTO getFile(String fileName,String filePath){
+        return fileConvertor.convert(fileRepository.getFileByPathAndFilename(filePath, fileName));
     }
 
     @Transactional
-    public String addMultipleFiles(List<FileDTO> files) {
-        if (files.isEmpty()) {
-            return "No files provided";
-        }
-
-        List<String> filenames = files.stream().map(FileDTO::getFilename).collect(Collectors.toList());
-        List<String> paths = files.stream().map(FileDTO::getPath).collect(Collectors.toList());
-
-        List<File> existingFiles = fileRepository.findFilesByPathAndFilename(paths,filenames);
-
-        Set<String> existingFileKeys = existingFiles.stream()
-                .map(file -> file.getPath() + "|" + file.getFilename())
-                .collect(Collectors.toSet());
-
-        Map<String, FileType> fileTypeMap = fileTypeRepository.findAll().stream()
-                .collect(Collectors.toMap(FileType::getType, fileType -> fileType));
-
-        List<File> newFiles = new ArrayList<>();
-
-        for (FileDTO file : files) {
-            String key = file.getPath() + "|" + file.getFilename();
-            if (existingFileKeys.contains(key)) {
-                continue;
-            }
-
+    public String addFile(Object payload) {
+        if(payload instanceof FileDTO) {
+            FileDTO fileDTO = objectMapper.convertValue(payload, FileDTO.class);
             File newFile = new File();
-            newFile.setFilename(file.getFilename());
-            newFile.setPath(file.getPath());
-
-            List<FileTags> tags = file.getTags().stream()
-                    .map(tag -> new FileTags(null,newFile,tag))
-                    .toList();
+            newFile.setFilename(fileDTO.getFilename());
+            newFile.setPath(fileDTO.getPath());
+            List<FileTags> tags = new ArrayList<>();
+            for (String tag : fileDTO.getTags()) {
+                FileTags fileTags = new FileTags();
+                fileTags.setTag(tag);
+                tags.add(fileTags);
+            }
             newFile.setTags(tags);
+            newFile.setFilesize(fileDTO.getFilesize());
+            newFile.setAccessedAt(fileDTO.getAccessedAt());
+            newFile.setCreatedAt(fileDTO.getCreatedAt());
+            newFile.setExtension(fileDTO.getExtension());
+            newFile.setUpdatedAt(fileDTO.getUpdatedAt());
 
-            newFile.setFilesize(file.getFilesize());
-            newFile.setAccessedAt(file.getAccessedAt());
-            newFile.setCreatedAt(file.getCreatedAt());
-            newFile.setExtension(file.getExtension());
-            newFile.setUpdatedAt(file.getUpdatedAt());
-
-            FileType fileType = fileTypeMap.get(file.getType());
+            FileType fileType = fileTypeRepository.getFileTypeByType(fileDTO.getType());
             if (fileType == null) {
-                return "Error: FileType '" + file.getType() + "' not found";
+                return null;
             }
             newFile.setType(fileType);
+            fileRepository.save(newFile);
+            return "File added successfully";
+        }else if(payload instanceof List<?>){
+            List<FileDTO> fileDTOs = Collections.singletonList(objectMapper.convertValue(payload, FileDTO.class));
 
-            newFiles.add(newFile);
-        }
+            List<String> filenames = fileDTOs.stream().map(FileDTO::getFilename).collect(Collectors.toList());
+            List<String> paths = fileDTOs.stream().map(FileDTO::getPath).collect(Collectors.toList());
 
-        if (newFiles.isEmpty()) {
-            return "No new files to add";
-        }
+            List<File> existingFiles = fileRepository.findFilesByPathAndFilename(paths,filenames);
 
-        fileRepository.saveAll(newFiles);
-        return "Files added successfully";
-    }
+            Set<String> existingFileKeys = existingFiles.stream()
+                    .map(file -> file.getPath() + "|" + file.getFilename())
+                    .collect(Collectors.toSet());
 
-    @Transactional
-    public File updateFile(String id, List<MetadataEntries> request) {
-        File oldFile = fileRepository.findById(id).orElse(null);
-        if (oldFile == null) {
-            throw new RuntimeException("File not found!");
-        }
+            Map<String, FileType> fileTypeMap = fileTypeRepository.findAll().stream()
+                    .collect(Collectors.toMap(FileType::getType, fileType -> fileType));
 
-        for (MetadataEntries entry : request) {
-            String fieldName = entry.getKey();
-            String newValue = entry.getValue();
+            List<File> newFiles = new ArrayList<>();
 
-            try {
-                Field field = File.class.getDeclaredField(fieldName);
-                field.setAccessible(true);
+            for (FileDTO file : fileDTOs) {
+                String key = file.getPath() + "|" + file.getFilename();
+                if (existingFileKeys.contains(key)) {
+                    continue;
+                }
 
-                Object convertedValue = convertValue(field.getType(), newValue);
+                File newFile = new File();
+                newFile.setFilename(file.getFilename());
+                newFile.setPath(file.getPath());
 
-                field.set(oldFile, convertedValue);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new RuntimeException("Error updating field: " + fieldName, e);
+                List<FileTags> tags = file.getTags().stream()
+                        .map(tag -> new FileTags(null,newFile,tag))
+                        .toList();
+                newFile.setTags(tags);
+
+                newFile.setFilesize(file.getFilesize());
+                newFile.setAccessedAt(file.getAccessedAt());
+                newFile.setCreatedAt(file.getCreatedAt());
+                newFile.setExtension(file.getExtension());
+                newFile.setUpdatedAt(file.getUpdatedAt());
+
+                FileType fileType = fileTypeMap.get(file.getType());
+                if (fileType == null) {
+                    return "Error: FileType '" + file.getType() + "' not found";
+                }
+                newFile.setType(fileType);
+
+                newFiles.add(newFile);
             }
+
+            if (newFiles.isEmpty()) {
+                return "No new files to add";
+            }
+
+            fileRepository.saveAll(newFiles);
+            return "Files added successfully";
         }
 
-        return fileRepository.save(oldFile);
+        return null;
     }
 
     @Transactional
@@ -201,15 +181,6 @@ public class FileService {
     }
 
     @Transactional
-    public String deleteFile(String id) {
-        if(fileRepository.findById(id).isPresent()) {
-            return "File not found";
-        }
-        fileRepository.deleteById(id);
-        return "File deleted";
-    }
-
-    @Transactional
     public String deleteFile(String path,String filename) {
         if(fileRepository.getFileByPathAndFilename(path, filename) != null) {
             return "File not found";
@@ -218,15 +189,24 @@ public class FileService {
         return "File deleted";
     }
 
-    public List<File> searchFilesByName(String filename) { return fileRepository.findAllByFilename(filename);}
+    public List<ReturnedFileDTO> searchFilesByName(String filename) {
+        List<File> files = fileRepository.findAllByFilename(filename);
+        List<ReturnedFileDTO> returnedFiles = new ArrayList<>();
+        if (files.isEmpty()) { return returnedFiles; }
+        files.forEach(file -> {
+            returnedFiles.add(fileConvertor.convert(file));
+        });
+        return returnedFiles;
+    }
 
-    public List<File> searchFilesByExtension(String ext) { return fileRepository.findAllByExtension(ext); }
-
-    @Transactional
-    public boolean deleteMultipleFiles(List<FileIdDTO> files) {
-        List<String> fileIds = files.stream().map(FileIdDTO::getId).collect(Collectors.toList());
-        metadataRepository.deleteMetadataForFiles(fileIds);
-        fileRepository.deleteAllById(fileIds); return !files.isEmpty();
+    public List<ReturnedFileDTO> searchFilesByExtension(String ext) {
+        List<File> files = fileRepository.findAllByExtension(ext);
+        List<ReturnedFileDTO> returnedFiles = new ArrayList<>();
+        if (files.isEmpty()) { return returnedFiles; }
+        files.forEach(file -> {
+            returnedFiles.add(fileConvertor.convert(file));
+        });
+        return returnedFiles;
     }
 
     @Transactional
@@ -235,8 +215,15 @@ public class FileService {
         return deletedCount == files.size();
     }
 
-    public List<File> findBySizeInterval(int min, int max) { return fileRepository.findBySizeGreaterThan(min, max); }
-
+    public List<ReturnedFileDTO> findBySizeInterval(String min, String max) {
+        List<File> files = fileRepository.findBySizeGreaterThan(min, max);
+        List<ReturnedFileDTO> returnedFiles = new ArrayList<>();
+        if (files.isEmpty()) { return returnedFiles; }
+        files.forEach(file -> {
+            returnedFiles.add(fileConvertor.convert(file));
+        });
+        return returnedFiles;
+    }
 
     private Object convertValue(Class<?> fieldType, String value) {
         if (fieldType == int.class || fieldType == Integer.class) {
@@ -257,19 +244,6 @@ public class FileService {
     The following methods are for the tags
      */
 
-    public List<Tag> getTagsForFile(String id){
-        List<FileTags> fileTags = fileRepository.findTagsForFile(id);
-        if(!fileTags.isEmpty()) {
-            List<Tag> tags = new ArrayList<>();
-            Tag tag = new Tag();
-            fileTags.forEach(fileTag -> {
-                tags.add(new Tag(fileTag.getTag()));
-            });
-            return tags;
-        }
-        return null;
-    }
-
     public List<Tag> getTagsForFile(String path, String filename) {
         List<FileTags> fileTags = fileRepository.findTagsForFile(path, filename);
         if(!fileTags.isEmpty()) {
@@ -287,41 +261,35 @@ public class FileService {
         return fileTagsRepository.findAll().stream().map(FileTags::getTag).collect(Collectors.toSet());
     }
 
-    public List<File> getFilesByTag(String tag) {
+    public List<ReturnedFileDTO> getFilesByTag(String tag) {
         Set<String> allTags = getAllTags();
-        List<File> files = new ArrayList<>();
+        List<ReturnedFileDTO> returnedFiles = new ArrayList<>();
+        Map<String,String> pathAndFilename = new HashMap<>();
         for(String tagName : allTags) {
             if(tagName.contains(tag)){
-                return fileRepository.findFilesForTag(tagName);
+                List<File> repoFiles = fileRepository.findFilesForTag(tagName);
+                if(repoFiles.isEmpty()) { continue; }
+                repoFiles.forEach(file -> {
+                    if(!pathAndFilename.containsKey(file.getPath())){
+                        returnedFiles.add(fileConvertor.convert(file));
+                        pathAndFilename.put(file.getPath(),file.getFilename());
+                    }
+                });
             }
         }
-        return files;
+        return returnedFiles;
     }
 
-    public List<File> getFilesByTag(List<Tag> tags) {
-        List<File> files = new ArrayList<>();
-        for(Tag tag : tags) {
-            files.addAll(fileRepository.findFilesForTag(tag.getTag()));
+    public List<ReturnedFileDTO> getFilesByTag(List<String> tags) {
+        List<ReturnedFileDTO> returnedFileDTOS = new ArrayList<>();
+        for(String tag : tags) {
+            List<File> files = fileRepository.findFilesForTag(tag);
+            if(files.isEmpty()) { continue; }
+            files.forEach(file -> {
+                returnedFileDTOS.add(fileConvertor.convert(file));
+            });
         }
-        return files;
-    }
-
-    @Transactional
-    public String addTagsToFile(String id, List<Tag> tags) {
-        File oldFile = fileRepository.findById(String.valueOf(id)).orElse(null);
-        if (oldFile != null) {
-            for(Tag tag : tags) {
-                FileTags fileTags = new FileTags();
-                fileTags.setTag(tag.getTag());
-                fileTags.setFile(oldFile);
-                if(fileTagsRepository.findById(String.valueOf(id)).isEmpty()) {
-                    fileTagsRepository.save(fileTags);
-                }
-            }
-
-            return "Tags added";
-        }
-        return null;
+        return returnedFileDTOS;
     }
 
     @Transactional
@@ -360,24 +328,6 @@ public class FileService {
         return "File not found";
     }
 
-
-    @Transactional
-    public String deleteTagsForFile(String id, List<Tag> tags) {
-        File oldFile = fileRepository.findById(id).orElse(null);
-        if (oldFile != null) {
-            List<FileTags> fileTags = oldFile.getTags();
-
-            fileTags.removeIf(fileTag -> tags.stream()
-                    .anyMatch(tag -> tag.getTag().equals(fileTag.getTag())));
-
-            oldFile.setTags(fileTags);
-            fileRepository.save(oldFile);
-
-            return "Tags removed";
-        }
-        return "File not found";
-    }
-
     @Transactional
     public String deleteAllTagsForFile(String path, String filename) {
         File oldFile = fileRepository.getFileByPathAndFilename(path, filename);
@@ -388,17 +338,6 @@ public class FileService {
             return "Tags removed";
         }
 
-        return null;
-    }
-
-    @Transactional
-    public String deleteAllTagsForFile(String id) {
-        File oldFile = fileRepository.findById(id).orElse(null);
-        if (oldFile != null) {
-            oldFile.getTags().clear();
-            fileRepository.save(oldFile);
-            return "Tags removed";
-        }
         return null;
     }
 

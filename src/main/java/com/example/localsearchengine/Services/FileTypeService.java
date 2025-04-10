@@ -1,6 +1,6 @@
 package com.example.localsearchengine.Services;
 
-import com.example.localsearchengine.DTOs.FileTypeDTO;
+import com.example.localsearchengine.DTOs.FileDTOS.FileTypeDTO;
 import com.example.localsearchengine.Entites.FileType;
 import com.example.localsearchengine.Persistence.FileTypeRepository;
 import jakarta.transaction.Transactional;
@@ -29,40 +29,29 @@ public class FileTypeService {
         return fileTypeDTOs;
     }
 
-    public List<FileType> getFileTypesMatching(FileTypeDTO fileTypeDTO) {
-        List<FileType> fileTypes = getFileTypes();
-        List<FileType> finalFileTypes = new ArrayList<>();
-        for (FileType fileType : fileTypes) {
-            if(fileType.getType().contains(fileTypeDTO.getType())) {
-                finalFileTypes.add(fileType);
-            }
-        }
-        return finalFileTypes;
-    }
-
     @Transactional
-    public String saveFileType(FileTypeDTO fileTypeDTO) {
+    public String saveFileType(String ext) {
         FileType fileType = new FileType();
-        fileType.setType(fileTypeDTO.getType());
+        fileType.setType(ext);
 
         fileTypeRepository.save(fileType);
 
         return "FileType saved successfully";
     }
 
-
     @Transactional
-    public String deleteFileType(FileTypeDTO fileTypeDTO) {
+    public String deleteFileType(List<String> ext) {
         List<FileType> fileTypes = getFileTypes();
         for (FileType fileType : fileTypes) {
-            if(fileType.getType().equals(fileTypeDTO.getType())) {
+            if(ext.contains(fileType.getType())) {
                 fileTypeRepository.delete(fileType);
             }
         }
         return "FileType deleted successfully";
     }
 
-    public Boolean checkFileType(FileTypeDTO fileTypeDTO) {
-        return fileTypeRepository.existsByFileType(fileTypeDTO.getType());
+
+    public Boolean checkFileType(String type) {
+        return fileTypeRepository.existsByFileType(type);
     }
 }

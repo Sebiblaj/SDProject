@@ -1,7 +1,6 @@
 package com.example.localsearchengine.Controllers;
 
-import com.example.localsearchengine.DTOs.FileTypeDTO;
-import com.example.localsearchengine.Entites.FileType;
+import com.example.localsearchengine.DTOs.FileDTOS.FileTypeDTO;
 import com.example.localsearchengine.Services.FileTypeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,28 +15,22 @@ public class FileTypeController {
     @Autowired
     private FileTypeService fileTypeService;
 
-    @GetMapping(value = "getAllTypes")
-    public ResponseEntity<List<FileType>> getAllTypes() {return ResponseEntity.ok(fileTypeService.getFileTypes());}
-
-    @GetMapping(value = "getAllTypesNoId")
+    @GetMapping(value = "")
     public ResponseEntity<List<FileTypeDTO>> getAllTypesNoId() {return ResponseEntity.ok(fileTypeService.getFileTypesNoId());}
 
-    @GetMapping(value = "checkTypeExists")
-    public ResponseEntity<Boolean> checkTypeExists(@RequestBody FileTypeDTO fileTypeDTO) {
-        return fileTypeService.checkFileType(fileTypeDTO) ? ResponseEntity.ok(true) : ResponseEntity.notFound().build();
+    @GetMapping(value = "check")
+    public ResponseEntity<Boolean> checkTypeExists(@RequestParam String ext) {
+        return fileTypeService.checkFileType(ext) ? ResponseEntity.ok(true) : ResponseEntity.notFound().build();
     }
 
-    @GetMapping(value = "getAllTypesMatching")
-    public List<FileType> getAllTypesMatching(@RequestBody FileTypeDTO fileTypeDTO) {return fileTypeService.getFileTypesMatching(fileTypeDTO);}
-
-    @PostMapping(value = "addFileType")
-    public ResponseEntity<String> addFileType(@RequestBody FileTypeDTO fileTypeDTO) {
-        return ResponseEntity.ok(fileTypeService.saveFileType(fileTypeDTO));
+    @PostMapping(value = "add")
+    public ResponseEntity<String> addFileType(@RequestParam String ext) {
+        return ResponseEntity.ok(fileTypeService.saveFileType(ext));
     }
 
-    @DeleteMapping(value = "deleteFileType")
-    public ResponseEntity<String> deleteFileType(@RequestBody FileTypeDTO fileTypeDTO) {
-        return ResponseEntity.ok(fileTypeService.deleteFileType(fileTypeDTO));
+    @DeleteMapping(value = "delete")
+    public ResponseEntity<String> deleteFileType(@RequestParam List<String> ext) {
+        return ResponseEntity.ok(fileTypeService.deleteFileType(ext));
     }
 
 }

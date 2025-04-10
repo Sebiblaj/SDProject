@@ -1,4 +1,4 @@
-package com.example.localsearchengine.DTOs;
+package com.example.localsearchengine.DTOs.ContentDTOS;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

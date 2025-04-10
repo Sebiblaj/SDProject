@@ -12,17 +12,7 @@ import java.util.List;
 @Repository
 public interface MetadataRepository extends JpaRepository<Metadata, Long> {
 
-    @Query("SELECT m from Metadata m WHERE m.file.id = :id")
-    Metadata getMetadataForFile(String id);
-
-    @Query("SELECT m FROM Metadata m WHERE m.file.id IN :id")
-    List<Metadata> getMetadataForFiles(List<String> id);
-
     @Query("SELECT m from Metadata m WHERE m.file.filename = :filename AND m.file.path = :path")
     Metadata getMetadataForFile(@Param("path") String path, @Param("filename") String filename);
-
-    @Modifying
-    @Query("DELETE from Metadata m WHERE m.file.id IN :ids")
-    void deleteMetadataForFiles(@Param("ids") List<String> ids);
 
 }

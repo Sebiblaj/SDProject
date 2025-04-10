@@ -1,4 +1,4 @@
-package com.example.localsearchengine.DTOs;
+package com.example.localsearchengine.DTOs.MetadataDTOS;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,7 +8,8 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Tag {
+public class MetadataEntries {
 
-    private String tag;
+    private String key;
+    private String value;
 }

@@ -1,6 +1,9 @@
 package com.example.localsearchengine.Services;
 
-import com.example.localsearchengine.DTOs.*;
+import com.example.localsearchengine.DTOs.ContentDTOS.ContentsDTO;
+import com.example.localsearchengine.DTOs.ContentDTOS.FileContentDTO;
+import com.example.localsearchengine.DTOs.ContentDTOS.FileSearchResult;
+import com.example.localsearchengine.DTOs.FileDTOS.PathAndName;
 import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.Entites.FileContents;
 import com.example.localsearchengine.Persistence.FileContentsRepository;
@@ -20,67 +23,30 @@ public class FileContentsService {
     @Autowired
     private FileRepository fileRepository;
 
-    public String getFileContents(String id) {
-        return fileContentsRepository.findByFileId(id);
-    }
-
     public String getFileContents(String path,String filename) { return fileContentsRepository.getFileContentsByPathAndFilename(path,filename).getContents(); }
-
-    public String getPreview(String id) {
-        return fileContentsRepository.findPreviewByFileId(id);
-    }
 
     public String getPreview(String path,String filename) {
         FileContents fileContents = fileContentsRepository.getFileContentsByPathAndFilename(path,filename);
         return fileContents != null ? fileContents.getPreview() : null;
     }
 
-    public FileSearchResult searchInFileById(String id, KeywordDTO keyword) {
-        String formattedKeyword = keyword.getKeyword().replace(" ", " & ");
-        FileContents fileContents = fileContentsRepository.searchFilesByKeyword(formattedKeyword, Integer.valueOf(id));
+    public FileSearchResult searchInFileByPathAndName(String path, String filename, String keyword) {
+        FileContents fileContents = fileContentsRepository.searchFilesByKeyword(path, filename, keyword);
         if(fileContents != null) {
-            return searchInContents(fileContents.getFile().getFilename(),fileContents.getContents(),keyword.getKeyword());
+            return searchInContents(fileContents.getFile().getFilename(),fileContents.getContents(),keyword);
         }
         return null;
     }
 
-    public FileSearchResult searchInFileByPathAndName(String path, String filename, KeywordDTO keyword) {
-        FileContents fileContents = fileContentsRepository.searchFilesByKeyword(path, filename, keyword.getKeyword());
-        if(fileContents != null) {
-            return searchInContents(fileContents.getFile().getFilename(),fileContents.getContents(),keyword.getKeyword());
-        }
-        return null;
-    }
-
-    public List<FileSearchResult> searchInFilesForKeyword(KeywordDTO keyword) {
-        List<FileContents> fileContents = fileContentsRepository.searchFilesByKeyword(keyword.getKeyword());
+    public List<FileSearchResult> searchInFilesForKeyword(String keyword) {
+        List<FileContents> fileContents = fileContentsRepository.searchFilesByKeyword(keyword);
         List<FileSearchResult> fileSearchResults = new ArrayList<>();
         if(!fileContents.isEmpty()) {
             for(FileContents fileContent: fileContents) {
-                fileSearchResults.add(searchInContents(fileContent.getFile().getFilename(),fileContent.getContents(),keyword.getKeyword()));
+                fileSearchResults.add(searchInContents(fileContent.getFile().getFilename(),fileContent.getContents(),keyword));
             }
         }
         return fileSearchResults;
-    }
-
-    @Transactional
-    public String setFileContents(String id, ContentsDTO contentsDTO) {
-        FileContents fileContents = fileContentsRepository.findFileContentsByFileId(id);
-        if(fileContents != null) {
-            fileContents.setContents(contentsDTO.getContent());
-            fileContentsRepository.save(fileContents);
-            return "File Content Added Successfully";
-        }else{
-            File file=fileRepository.findById(id).orElse(null);
-            if(file != null) {
-                FileContents newFileContents = new FileContents();
-                newFileContents.setFile(file);
-                newFileContents.setContents(contentsDTO.getContent());
-                fileContentsRepository.save(newFileContents);
-                return "File Content Added Successfully";
-            }
-        }
-        return "File Content Not Added";
     }
 
     @Transactional
@@ -165,9 +131,6 @@ public class FileContentsService {
         }
         return "File Content Not Added";
     }
-
-    @Transactional
-    public void deleteFileContents(String id) {fileContentsRepository.deleteById(id);}
 
     @Transactional
     public void deleteFileContents(String path,String filename){
