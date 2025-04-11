@@ -33,7 +33,18 @@ public class FileContents {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private File file;
 
+    @PrePersist
+    @PreUpdate
+    public void updateSearchVector() {
+        if (contents != null && !contents.isEmpty()) {
+            this.searchVector = generateSearchVector(contents);
+        }
+    }
 
+    private String generateSearchVector(String contents) {
+        return "to_tsvector('english', '" + contents.replace("'", "''") + "')";
+    }
 }
+
 
 

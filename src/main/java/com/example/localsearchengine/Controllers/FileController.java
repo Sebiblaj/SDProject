@@ -49,6 +49,13 @@ public class FileController {
         return files.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(files);
     }
 
+    @GetMapping(value = "between", params = {"min","max"})
+    public ResponseEntity<List<ReturnedFileDTO>> findBySizeInterval(@RequestParam String min,
+                                                                    @RequestParam String max) {
+        List<ReturnedFileDTO> files = fileService.findBySizeInterval(min, max);
+        return files.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(files);
+    }
+
     @PostMapping("add")
     public ResponseEntity<String> addFileFlexible(@RequestBody Object payload) {
         String response = fileService.addFile(payload);
@@ -57,20 +64,12 @@ public class FileController {
     }
 
     @PutMapping("update")
-    public ResponseEntity<File> updateFilename(@RequestParam String filePath,
+    public ResponseEntity<String> updateFilename(@RequestParam String filePath,
                                                @RequestParam String fileName,
                                                @RequestBody List<MetadataEntries> request) {
-        File responseFile = fileService.updateFile(filePath,fileName, request);
-        return responseFile != null ? ResponseEntity.ok(responseFile) : ResponseEntity.notFound().build();
+        String result = fileService.updateFile(filePath,fileName, request);
+        return !result.equals("File not found") ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
     }
-
-    @DeleteMapping(value = "delete", params = {"filePath","fileName"})
-    public ResponseEntity<String> deleteFileById(@RequestParam String filePath,
-                                                 @RequestParam String fileName) {
-        String result = fileService.deleteFile(filePath, fileName);
-        return result.equals("File deleted") ? ResponseEntity.ok("File deleted successfully") : ResponseEntity.notFound().build();
-    }
-
 
     @DeleteMapping(value = "delete")
     public ResponseEntity<String> deleteMultipleFilesByPathAndName(@RequestBody List<PathAndName> fileIds) {
@@ -78,10 +77,10 @@ public class FileController {
         return result ? ResponseEntity.ok("All files deleted successfully") : ResponseEntity.notFound().build();
     }
 
-    @GetMapping(value = "between")
-    public ResponseEntity<List<ReturnedFileDTO>> findBySizeInterval(@RequestParam String min,@RequestParam String max) {
-        List<ReturnedFileDTO> files = fileService.findBySizeInterval(min, max);
-        return files.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(files);
+    @DeleteMapping(value = "delete",params = "all")
+    public ResponseEntity<String> deleteMultipleFilesByPathAndName() {
+        fileService.deleteByPathAndFilename();
+        return ResponseEntity.ok("All files deleted successfully");
     }
 
 /*
@@ -102,19 +101,12 @@ The next part is for the Tags of the file
         return tags.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(tags);
     }
 
-    @GetMapping(value = "tags/file",params = "keyword")
-    public ResponseEntity<List<ReturnedFileDTO>> searchFilesByTagKeyword(@RequestParam String keyword) {
-        List<ReturnedFileDTO> files = fileService.getFilesByTag(keyword);
-        return files.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(files);
-    }
 
-    @GetMapping(value = "tags/file")
+    @GetMapping(value = "tags/file",params = "tags")
     public ResponseEntity<List<ReturnedFileDTO>> getFileForTags(@RequestParam List<String> tags) {
         List<ReturnedFileDTO> files = fileService.getFilesByTag(tags);
         return !files.isEmpty() ? ResponseEntity.ok(files) : ResponseEntity.notFound().build();
     }
-
-
 
     @PostMapping(value = "tags/add" , params = {"filePath","fileName"})
     public ResponseEntity<String> addTagsToFile(@RequestParam String filePath,

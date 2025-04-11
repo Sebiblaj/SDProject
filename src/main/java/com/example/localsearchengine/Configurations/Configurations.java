@@ -1,7 +1,8 @@
 package com.example.localsearchengine.Configurations;
 
-import com.example.localsearchengine.ServiceExecutors.FileConvertor;
-import com.example.localsearchengine.ServiceExecutors.MetadataConvertor;
+import com.example.localsearchengine.ServiceExecutors.Convertors.FileConvertor;
+import com.example.localsearchengine.ServiceExecutors.Convertors.FileDTOConverter;
+import com.example.localsearchengine.ServiceExecutors.Convertors.MetadataConvertor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,4 +18,7 @@ public class Configurations {
 
     @Bean
     public MetadataConvertor metadataConvertor(){ return new MetadataConvertor(); }
+
+    @Bean
+    public FileDTOConverter fileDTOConverter(){ return new FileDTOConverter(); }
 }

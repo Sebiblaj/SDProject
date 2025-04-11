@@ -6,21 +6,23 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class FileTags {
+public class FileTag {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @JsonIgnore
-    @ManyToOne
-    @JoinColumn(name = "file_id", nullable = false)
-    private File file;
-
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String tag;
+
+    @ManyToMany(mappedBy = "tags")
+    @JsonIgnore
+    private Set<File> files;
 }
+

@@ -1,5 +1,6 @@
 package com.example.localsearchengine.Services;
 
+import com.example.localsearchengine.DTOs.LoggerMessage;
 import com.example.localsearchengine.DTOs.MetadataDTOS.KeyDTO;
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataDTO;
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataEntries;
@@ -7,16 +8,23 @@ import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.Entites.Metadata;
 import com.example.localsearchengine.Persistence.FileRepository;
 import com.example.localsearchengine.Persistence.MetadataRepository;
-import com.example.localsearchengine.ServiceExecutors.MetadataConvertor;
+import com.example.localsearchengine.ServiceExecutors.Convertors.MetadataConvertor;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class MetadataService {
+
+    @Autowired
+    private KafkaTemplate<String, Object> kafkaTemplate;
 
     @Autowired
     private MetadataRepository metadataRepository;
@@ -27,21 +35,65 @@ public class MetadataService {
     @Autowired
     private MetadataConvertor metadataConvertor;
 
+    @Value("${kafka.topic.logs}")
+    private String TOPIC;
+
+    @Autowired
+    public void KafkaProducer(KafkaTemplate<String, Object> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+
+    public void sendMessage(Object message) {
+        kafkaTemplate.send(TOPIC, message);
+    }
+
     public MetadataDTO getMetadataForFile(String path, String filename){
+
+        sendMessage(new LoggerMessage(
+                Timestamp.valueOf(LocalDateTime.now()),
+                "sebir",
+                new LoggerMessage.ActivityDetails(
+                        1,
+                        new ArrayList<>(List.of(path + "/" + filename)),
+                        "User has accessed the metadata for the file."
+                )
+        ));
+
         return metadataConvertor.convert(metadataRepository.getMetadataForFile(path, filename));
     }
 
     @Transactional
     public String modifyMetadataForFile(String path,String filename, List<MetadataEntries> entries) {
         Metadata metadata = metadataRepository.getMetadataForFile(path, filename);
-        if(metadata == null){return null;}
-        for(MetadataEntries entry : entries){
-            if(metadata.getValues().containsKey(entry.getKey())){
-                metadata.getValues().replace(entry.getKey(), entry.getValue());
+        boolean success = true;
+        if(metadata == null){
+            success = false;
+        }else {
+            for (MetadataEntries entry : entries) {
+                if (metadata.getValues().containsKey(entry.getKey())) {
+                    metadata.getValues().replace(entry.getKey(), entry.getValue());
+                }
             }
+            metadataRepository.save(metadata);
         }
-        metadataRepository.save(metadata);
-        return "Metadata modified";
+        String description;
+        if(success){
+            description = "User updated some metadata for the file.";
+        }else{
+            description = "User has tried to update the metadata for the file: " + path + "/" + filename + " but it has no metadata.";
+        }
+
+        sendMessage(new LoggerMessage(
+                Timestamp.valueOf(LocalDateTime.now()),
+                "sebir",
+                new LoggerMessage.ActivityDetails(
+                        1,
+                        new ArrayList<>(List.of(path + "/" + filename)),
+                        description
+                )
+        ));
+
+        return success ? "Metadata modified for file" : null;
     }
 
     @Transactional
@@ -50,6 +102,7 @@ public class MetadataService {
         Map<String, String> entries = entry.stream()
                 .collect(Collectors.toMap(MetadataEntries::getKey, MetadataEntries::getValue));
 
+        boolean success = true;
         if (metadata == null) {
             File file = fileRepository.findFilesByPathAndFilename(path, filename);
             if (file != null) {
@@ -59,7 +112,7 @@ public class MetadataService {
 
                 metadataRepository.save(newMetadata);
             } else {
-                return null;
+                success = false;
             }
         } else {
             Map<String, String> existingEntries = metadata.getValues();
@@ -72,17 +125,55 @@ public class MetadataService {
 
             metadataRepository.save(metadata);
         }
-        return "Metadata added";
+
+        String description;
+        if(success){
+            description = "User has set new metadata for the file.";
+        }else{
+            description = "User has tried to set metadata to file: " + path + "/" + filename + " but file does not exist.";
+        }
+
+        sendMessage(new LoggerMessage(
+                Timestamp.valueOf(LocalDateTime.now()),
+                "sebir",
+                new LoggerMessage.ActivityDetails(
+                        1,
+                        new ArrayList<>(List.of(path + "/" + filename)),
+                        description
+                )
+        ));
+        return success ? "Metadata added for file" : null;
     }
 
     @Transactional
     public String deleteMetadataForFile(String path,String filename,List<KeyDTO> keys){
         Metadata metadata = metadataRepository.getMetadataForFile(path, filename);
-        if(metadata == null){return null;}
-        for(KeyDTO key : keys){
-            metadata.getValues().remove(key.getKey());
+        boolean success = true;
+        if(metadata == null){
+            success = false;
+        }else {
+            for (KeyDTO key : keys) {
+                metadata.getValues().remove(key.getKey());
+            }
+            metadataRepository.save(metadata);
         }
-        metadataRepository.save(metadata);
-        return "Metadata deleted";
+        String description;
+        if(success){
+           description= "User deleted some metadata for the file: " + keys.stream().map(KeyDTO::getKey).toList();
+        }else{
+            description = "User has tried to delete metadata for file: " + path + "/" + filename + " but file has no metadata";
+        }
+
+        sendMessage(new LoggerMessage(
+                Timestamp.valueOf(LocalDateTime.now()),
+                "sebir",
+                new LoggerMessage.ActivityDetails(
+                        1,
+                        new ArrayList<>(List.of(path + "/" + filename)),
+                        description
+                )
+        ));
+
+        return success ? "Metadata deleted" : null;
     }
 }

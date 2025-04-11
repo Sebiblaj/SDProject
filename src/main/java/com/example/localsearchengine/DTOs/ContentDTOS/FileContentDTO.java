@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 public class FileContentDTO {
 
     private String path;
-    private String content;
     private String filename;
+    private String content;
 }

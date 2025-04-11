@@ -15,28 +15,17 @@ public interface FileContentsRepository extends JpaRepository<FileContents, Stri
     @Query("SELECT f FROM FileContents f WHERE f.file.filename = :filename AND f.file.path = :path")
     FileContents getFileContentsByPathAndFilename(String path, String filename);
 
-    @Query(value = "SELECT * FROM file_contents f WHERE f.search_vector @@ to_tsquery('english', :keyword)",
-            nativeQuery = true)
+    @Query(value = "SELECT * FROM file_contents f WHERE f.search_vector @@ to_tsquery('english', :keyword) LIMIT 10", nativeQuery = true)
     List<FileContents> searchFilesByKeyword(@Param("keyword") String keyword);
 
-    @Query(value = "SELECT * FROM file_contents f WHERE f.id = :id AND f.search_vector @@ to_tsquery('english', :keyword)",
-            nativeQuery = true)
-    FileContents searchFilesByKeyword(@Param("keyword") String keyword, @Param("id") Integer id);
-
-    @Query(value = "SELECT * FROM file_contents f WHERE f.file_id = (SELECT id FROM file WHERE path = :path AND filename = :filename) AND f.search_vector @@ to_tsquery('english', :keyword)",
-            nativeQuery = true)
+    @Query(value = "SELECT * FROM file_contents f WHERE f.file_id = (SELECT id FROM file WHERE path = :path AND filename = :filename) AND f.search_vector @@ to_tsquery('english', :keyword)", nativeQuery = true)
     FileContents searchFilesByKeyword(@Param("keyword") String keyword, @Param("path") String path, @Param("filename") String filename);
 
     FileContents findByFile(File file);
 
-    @Query("SELECT f.contents from FileContents f WHERE f.file.id = :id")
-    String findByFileId(@Param("id") String id);
+    @Query("SELECT f.preview FROM FileContents f WHERE f.file.filename = :filename AND f.file.path = :filepath")
+    String findPreviewByPathAndFilename(@Param("filename") String filename, @Param("filepath") String filepath);
 
-    @Query("SELECT f from FileContents f WHERE f.file.id = :id")
-    FileContents findFileContentsByFileId(@Param("id") String id);
-
-    @Query("SELECT f.preview from FileContents f WHERE f.file.id = :id")
-    String findPreviewByFileId(@Param("id") String id);
 
 }
 

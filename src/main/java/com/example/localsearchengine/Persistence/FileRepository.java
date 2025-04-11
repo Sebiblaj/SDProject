@@ -2,8 +2,7 @@ package com.example.localsearchengine.Persistence;
 
 import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.DTOs.FileDTOS.PathAndName;
-import com.example.localsearchengine.Entites.FileTags;
-import com.example.localsearchengine.Entites.Metadata;
+import com.example.localsearchengine.Entites.FileTag;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Map;
 
 @Repository
 public interface FileRepository extends JpaRepository<File, String> {
@@ -34,7 +32,7 @@ public interface FileRepository extends JpaRepository<File, String> {
     List<File> findBySizeGreaterThan(@Param("min") String min, @Param("max") String max);
 
     @Query("SELECT f.tags FROM File f WHERE f.path = :path AND f.filename = :filename")
-    List<FileTags> findTagsForFile(@Param("path") String path, @Param("filename") String filename);
+    List<FileTag> findTagsForFile(@Param("path") String path, @Param("filename") String filename);
 
     @Query("SELECT f FROM File f JOIN f.tags t WHERE t.tag = :tag")
     List<File> findFilesForTag(@Param("tag") String tag);

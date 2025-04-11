@@ -52,7 +52,7 @@ public class FileContentsController {
                                                       @RequestParam String fileName,
                                                       @RequestBody ContentsDTO contentsDTO) {
         String fileContents = fileContentsService.setFileContents(filePath,fileName,contentsDTO);
-        return fileContents.equals("Contents Added Successfully") ? ResponseEntity.ok(fileContents) : ResponseEntity.notFound().build();
+        return fileContents.equals("Success") ? ResponseEntity.ok("Contents added successfully to the file.") : ResponseEntity.notFound().build();
     }
 
     @PostMapping(value = "add")

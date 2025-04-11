@@ -1,4 +1,4 @@
-package com.example.localsearchengine.ServiceExecutors;
+package com.example.localsearchengine.ServiceExecutors.Convertors;
 
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataDTO;
 import com.example.localsearchengine.Entites.Metadata;
