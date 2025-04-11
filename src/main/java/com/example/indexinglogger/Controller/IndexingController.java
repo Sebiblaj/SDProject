@@ -10,7 +10,7 @@ import java.io.IOException;
 
 
 @RestController
-@RequestMapping(value = "indexing")
+@RequestMapping(value = "indexer")
 public class IndexingController {
 
     @Autowired
@@ -19,11 +19,6 @@ public class IndexingController {
     @PostMapping(value = "scanInDirectory")
     public ResponseEntity<String> triggerFullScan(@RequestBody PathDTO path) throws IOException {
         return ResponseEntity.ok(indexingService.scanAndSendFiles(path));
-    }
-
-    @GetMapping(value = "logs")
-    public ResponseEntity<?> getIndexingLogs() {
-        return ResponseEntity.ok(indexingService.getIndexingLog());
     }
 
 //    @GetMapping(value = "logs/{id}")

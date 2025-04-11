@@ -6,7 +6,6 @@ import com.example.indexinglogger.Executors.FileProcessors.FileEntitiesProcessor
 import com.example.indexinglogger.Executors.HTTPProcessors.HttpGetTypesHandler;
 import com.example.indexinglogger.Executors.HTTPProcessors.HttpPostContentsHandler;
 import com.example.indexinglogger.Executors.HTTPProcessors.HttpPostFilesHandler;
-import com.example.indexinglogger.Persistence.IndexingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -25,9 +24,6 @@ public class IndexingService {
 
     @Value("${message.addFile.success}")
     private String addFileSuccess;
-
-    @Autowired
-    private IndexingRepository indexingRepository;
 
     @Autowired
     private HttpGetTypesHandler httpGetTypesHandler;
@@ -66,7 +62,6 @@ public class IndexingService {
                 fileContentDTOS.add(fileFullContents.getContents());
             }
 
-
             String result =  httpPostFilesHandler.process(postAllFilesPath,fileDTOS);
             String result2 = httpPostContentsHandler.process(postMultipleContentPath, fileContentDTOS);
 
@@ -92,13 +87,10 @@ public class IndexingService {
                   indexingLogs.add(log);
               }
           }
-          indexingRepository.saveAll(indexingLogs);
           return  result;
         }
 
         return "Could not index files";
     }
-
-    public List<IndexingLog> getIndexingLog(){return indexingRepository.findAll();}
 
 }
