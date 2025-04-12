@@ -1,6 +1,6 @@
 package com.example.indexinglogger.Executors.HTTPProcessors;
 
-import com.example.indexinglogger.DTOs.FileContentDTO;
+import com.example.indexinglogger.DTOs.TagPathNameDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -13,7 +13,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 
 @Component
-public class HttpPostContentsHandler implements HttpProcessor<String>{
+public class HttpPostTagsHandler implements HttpProcessor<String>{
 
     @Autowired
     private RestTemplate restTemplate;
@@ -22,11 +22,11 @@ public class HttpPostContentsHandler implements HttpProcessor<String>{
     public String process(Object ... args) {
 
         if( args[0] instanceof String path && args[1] instanceof List){
-            List<FileContentDTO> files = (List<FileContentDTO>) args[1];
+            List<TagPathNameDTO> files = (List<TagPathNameDTO>) args[1];
 
             HttpHeaders headers = new HttpHeaders();
             headers.add("Content-Type", "application/json");
-            HttpEntity<List<FileContentDTO>> entity = new HttpEntity<>(files,headers);
+            HttpEntity<List<TagPathNameDTO>> entity = new HttpEntity<>(files,headers);
 
             ResponseEntity<String> response = restTemplate.exchange(
                     path,
@@ -42,5 +42,4 @@ public class HttpPostContentsHandler implements HttpProcessor<String>{
 
         return null;
     }
-
 }

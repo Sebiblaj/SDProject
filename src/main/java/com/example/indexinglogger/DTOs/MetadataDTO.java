@@ -4,11 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class FileTypeDTO {
-
-    private String type;
-    private double weight;
+public class MetadataDTO {
+    private Map<String,Object> metadata;
 }

@@ -1,11 +1,8 @@
 package com.example.indexinglogger.Service;
 
 import com.example.indexinglogger.DTOs.*;
-import com.example.indexinglogger.Entities.IndexingLog;
 import com.example.indexinglogger.Executors.FileProcessors.FileEntitiesProcessor;
-import com.example.indexinglogger.Executors.HTTPProcessors.HttpGetTypesHandler;
-import com.example.indexinglogger.Executors.HTTPProcessors.HttpPostContentsHandler;
-import com.example.indexinglogger.Executors.HTTPProcessors.HttpPostFilesHandler;
+import com.example.indexinglogger.Executors.HTTPProcessors.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -13,7 +10,9 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class IndexingService {
@@ -37,6 +36,15 @@ public class IndexingService {
     @Autowired
     private HttpPostContentsHandler httpPostContentsHandler;
 
+    @Autowired
+    private HttpPostMetadataHandler httpPostMetadataHandler;
+
+    @Autowired
+    private HttpGetTagsFromOpenAI httpGetTagsFromOpenAI;
+
+    @Autowired
+    private HttpPostTagsHandler httpPostTagsHandler;
+
     @Value("${request.types.getAllTypesWithoutId}")
     private String getTypesWithoutIdPath;
 
@@ -46,7 +54,18 @@ public class IndexingService {
     @Value("${request.content.postMultipleContent}")
     private String postMultipleContentPath;
 
+    @Value("${request.openai.getTagsFromContent}")
+    private String tagsFromContentPath;
+
+    @Value("${request.metadata.postMetadata}")
+    private String postMetadataPath;
+
+    @Value("${request.tags.postTags}")
+    private String postTagsPath;
+
     public String scanAndSendFiles(PathDTO startDir) throws IOException {
+
+        boolean success = true;
 
         List<FileTypeDTO> fileTypes = httpGetTypesHandler.processList(getTypesWithoutIdPath);
 
@@ -55,42 +74,40 @@ public class IndexingService {
             List<FileDTO> fileDTOS = new ArrayList<>();
             List<FileContentDTO> fileContentDTOS = new ArrayList<>();
 
-          List<FileFullContents> files = fileEntitiesProcessor.process(startDir.getPath(), fileTypes);
+            List<FileFullContents> files = fileEntitiesProcessor.process(startDir.getPath(), fileTypes);
+
+            System.out.println("File processed successfully");
 
             for(FileFullContents fileFullContents:files){
-                fileDTOS.add(fileFullContents.getFile());
+                FileDTO fileDTO = fileFullContents.getFile();
                 fileContentDTOS.add(fileFullContents.getContents());
+
+                String tagsString = httpGetTagsFromOpenAI.processList(tagsFromContentPath,fileFullContents.getContents()).getFirst();
+                System.out.println("Tags processed successfully");
+
+                if (tagsString != null && !tagsString.isBlank()) {
+                    List<Tag> tags = Arrays.stream(tagsString.split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .map(Tag::new)
+                            .toList();
+                    fileDTO.setTags(tags.stream().map(Tag::getTag).collect(Collectors.toList()));
+                }
+                fileDTOS.add(fileFullContents.getFile());
             }
 
             String result =  httpPostFilesHandler.process(postAllFilesPath,fileDTOS);
+            System.out.println(result);
             String result2 = httpPostContentsHandler.process(postMultipleContentPath, fileContentDTOS);
+            System.out.println(result2);
 
-          List<IndexingLog> indexingLogs = new ArrayList<>();
 
           if(result.equals("Could not add files") || result2.equals("Could not load contents")){
-             for(FileFullContents file : files){
-                 IndexingLog log = new IndexingLog();
-                 log.setFilename(file.getFile().getFilename());
-                 log.setStatus("Failed");
-                 log.setMessage(addFileFail);
-                 log.setTimestamp(new Timestamp(System.currentTimeMillis()));
-                 indexingLogs.add(log);
-             }
-          }else{
-              for(FileFullContents file : files){
-                  IndexingLog log = new IndexingLog();
-                  log.setFilename(file.getFile().getFilename());
-                  log.setStatus("Success");
-                  log.setMessage(addFileSuccess);
-                  log.setTimestamp(new Timestamp(System.currentTimeMillis()));
-                  log.setPath(file.getFile().getPath());
-                  indexingLogs.add(log);
-              }
+               success = false;
           }
-          return  result;
         }
 
-        return "Could not index files";
+        return success ? addFileFail : addFileSuccess;
     }
 
 }

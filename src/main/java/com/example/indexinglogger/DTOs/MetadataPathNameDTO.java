@@ -7,8 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class FileTypeDTO {
-
-    private String type;
-    private double weight;
+public class MetadataPathNameDTO {
+    private String path;
+    private String filename;
+    private MetadataDTO metadataDTO;
 }

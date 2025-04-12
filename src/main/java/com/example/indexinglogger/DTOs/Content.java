@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class FileTypeDTO {
-
-    private String type;
-    private double weight;
+public class Content {
+    private String contents;
 }

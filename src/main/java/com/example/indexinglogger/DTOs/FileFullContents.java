@@ -11,4 +11,5 @@ public class FileFullContents {
 
     private FileDTO file;
     private FileContentDTO contents;
+    private TagPathNameDTO tag;
 }

@@ -18,6 +18,7 @@ public class IndexingController {
 
     @PostMapping(value = "scanInDirectory")
     public ResponseEntity<String> triggerFullScan(@RequestBody PathDTO path) throws IOException {
+        System.out.println("reached here");
         return ResponseEntity.ok(indexingService.scanAndSendFiles(path));
     }
 

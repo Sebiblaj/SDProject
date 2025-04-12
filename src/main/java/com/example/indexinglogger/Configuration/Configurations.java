@@ -1,14 +1,14 @@
 package com.example.indexinglogger.Configuration;
 
 import com.example.indexinglogger.Executors.FileProcessors.FileEntitiesProcessor;
-import com.example.indexinglogger.Executors.HTTPProcessors.HttpGetTypesHandler;
-import com.example.indexinglogger.Executors.HTTPProcessors.HttpPostContentsHandler;
-import com.example.indexinglogger.Executors.HTTPProcessors.HttpPostFilesHandler;
+import com.example.indexinglogger.Executors.HTTPProcessors.*;
+import com.example.indexinglogger.Executors.RankingFunctions.FileRanker;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
-@org.springframework.context.annotation.Configuration
-public class Configuration {
+@Configuration
+public class Configurations {
 
     @Bean
     public RestTemplate restTemplate() { return new RestTemplate(); }
@@ -24,4 +24,16 @@ public class Configuration {
 
     @Bean
     public HttpPostContentsHandler httpPostContentsHandler() { return new HttpPostContentsHandler(); }
+
+    @Bean
+    public HttpPostMetadataHandler httpPostMetadataHandler() { return new HttpPostMetadataHandler(); }
+
+    @Bean
+    public HttpGetTagsFromOpenAI httpGetTagsFromOpenAI() { return new HttpGetTagsFromOpenAI(); }
+
+    @Bean
+    public HttpPostTagsHandler httpPostTagsHandler() { return new HttpPostTagsHandler(); }
+
+    @Bean
+    public FileRanker fileRanker() { return new FileRanker(); }
 }
