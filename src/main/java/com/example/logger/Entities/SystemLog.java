@@ -15,7 +15,7 @@ public class SystemLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private int id;
+    private Integer id;
 
     private Timestamp timestamp;
     private String fileName;
@@ -26,4 +26,7 @@ public class SystemLog {
 
     @Enumerated(EnumType.STRING)
     private QueryType queryType;
+
+    @Enumerated(EnumType.STRING)
+    private Status status;
 }

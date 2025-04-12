@@ -1,10 +1,231 @@
 📝 Log Entry
 ──────────────────────────────
-📅 Timestamp       : 2025-04-11 17:35:43.0
+📅 Timestamp       : 2025-04-13 01:00:05.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [TESTDIR\folder42/cyber]
+🖊️ Description      : User has set multiple files into the system.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:00:06.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [TESTDIR\folder42/cyber]
+🖊️ Description      : User has set the contents for the files.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:07:53.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : []
+🖊️ Description      : User has deleted all the tags from the file.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:07:54.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [cyber]
+🖊️ Description      : User has deleted all the files in the system.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:07:54.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [cyber]
+🖊️ Description      : User has deleted all the files in the system.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:07:54.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [cyber]
+🖊️ Description      : User has deleted all the files in the system.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:07:54.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [cyber]
+🖊️ Description      : User has deleted all the files in the system.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:07:54.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [cyber]
+🖊️ Description      : User has deleted all the files in the system.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:07:54.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [cyber]
+🖊️ Description      : User has deleted all the files in the system.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:07:54.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [cyber]
+🖊️ Description      : User has deleted all the files in the system.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:07:54.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [cyber]
+🖊️ Description      : User has deleted all the files in the system.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:07:54.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [cyber]
+🖊️ Description      : User has deleted all the files in the system.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:07:54.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [cyber]
+🖊️ Description      : User has deleted all the files in the system.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:09:57.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [TESTDIR\folder42/cyber]
+🖊️ Description      : User has set multiple files into the system.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:09:57.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [TESTDIR\folder42/cyber]
+🖊️ Description      : User has set the contents for the files.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:12:58.0
 👤 User            : sebir
 
 📂 Files Accessed  : 0
 📃 File Names      : []
+🖊️ Description      : User has tried to set multiple files into the system but failed
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:12:58.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [TESTDIR\folder42/cyber]
+🖊️ Description      : User has set the contents for the files.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:13:05.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [TESTDIR\folder42/cyber]
 🖊️ Description      : User has accessed all the files from the system.
 ──────────────────────────────
 
@@ -13,12 +234,155 @@
  
 📝 Log Entry
 ──────────────────────────────
-📅 Timestamp       : 2025-04-11 17:35:50.0
+📅 Timestamp       : 2025-04-13 01:14:46.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [TESTDIR\folder42/cyber]
+🖊️ Description      : User has accessed the file to retrieve its tags.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:15:15.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [TESTDIR\folder42/cyber]
+🖊️ Description      : User has accessed the contents for the file.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:15:22.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [TESTDIR\folder42/cyber]
+🖊️ Description      : User has accessed the contents preview for the file.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:20:24.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [TESTDIR\folder42/cyber]
+🖊️ Description      : User has accessed the contents preview for the file.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:21:14.0
 👤 User            : sebir
 
 📂 Files Accessed  : 0
 📃 File Names      : []
-🖊️ Description      : User has accessed all the files from the system.
+🖊️ Description      : User has accessed the contents of the files for the keyword: digital.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:21:48.0
+👤 User            : sebir
+
+📂 Files Accessed  : 0
+📃 File Names      : []
+🖊️ Description      : User has accessed the contents of the files for the keyword: digital.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:21:55.0
+👤 User            : sebir
+
+📂 Files Accessed  : 0
+📃 File Names      : []
+🖊️ Description      : User has accessed the contents of the files for the keyword: digital.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:57:30.0
+👤 User            : sebir
+
+📂 Files Accessed  : 0
+📃 File Names      : []
+🖊️ Description      : User has set contents to the file.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:57:34.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [TESTDIR\folder42/cyber]
+🖊️ Description      : User has accessed the contents for the file.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:59:16.0
+👤 User            : sebir
+
+📂 Files Accessed  : 0
+📃 File Names      : []
+🖊️ Description      : User has set contents to the file.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 01:59:19.0
+👤 User            : sebir
+
+📂 Files Accessed  : 1
+📃 File Names      : [TESTDIR\folder42/cyber]
+🖊️ Description      : User has accessed the contents for the file.
+──────────────────────────────
+
+ 
+ 
+ 
+📝 Log Entry
+──────────────────────────────
+📅 Timestamp       : 2025-04-13 02:02:04.0
+👤 User            : sebir
+
+📂 Files Accessed  : 0
+📃 File Names      : []
+🖊️ Description      : User has set contents to the file.
 ──────────────────────────────
 
  
