@@ -10,7 +10,7 @@ public class MetadataConvertor implements Convertor<Metadata, MetadataDTO> {
 
     @Override
     public MetadataDTO convert(Metadata payload) {
-        Map<String, String> metadata = new HashMap<>(payload.getValues());
+        Map<String, Object> metadata = new HashMap<>(payload.getValues());
         return new MetadataDTO(metadata);
     }
 }

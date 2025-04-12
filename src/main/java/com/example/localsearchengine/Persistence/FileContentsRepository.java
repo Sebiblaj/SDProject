@@ -15,17 +15,27 @@ public interface FileContentsRepository extends JpaRepository<FileContents, Stri
     @Query("SELECT f FROM FileContents f WHERE f.file.filename = :filename AND f.file.path = :path")
     FileContents getFileContentsByPathAndFilename(String path, String filename);
 
-    @Query(value = "SELECT * FROM file_contents f WHERE f.search_vector @@ to_tsquery('english', :keyword) LIMIT 10", nativeQuery = true)
-    List<FileContents> searchFilesByKeyword(@Param("keyword") String keyword);
+    @Query(value = "SELECT * FROM file_contents f WHERE f.path = :path AND f.search_vector @@ to_tsquery('english', :keyword)", nativeQuery = true)
+    List<FileContents> getFileContentsByPath(@Param("path") String path, @Param("keyword") String keyword);
 
-    @Query(value = "SELECT * FROM file_contents f WHERE f.file_id = (SELECT id FROM file WHERE path = :path AND filename = :filename) AND f.search_vector @@ to_tsquery('english', :keyword)", nativeQuery = true)
-    FileContents searchFilesByKeyword(@Param("keyword") String keyword, @Param("path") String path, @Param("filename") String filename);
+    @Query(value = "SELECT * FROM file_contents f WHERE f.filename = :filename AND f.search_vector @@ to_tsquery('english', :keyword)", nativeQuery = true)
+    List<FileContents> getFileContentsByName(@Param("filename") String filename, @Param("keyword") String keyword);
+
+    @Query(value = "SELECT * FROM file_contents f WHERE f.search_vector @@ to_tsquery('english', :keyword)", nativeQuery = true)
+    List<FileContents> searchFileByKeyword(@Param("keyword") String keyword);
+
+    @Query(value = "SELECT fc.* FROM file_contents fc " +
+            "JOIN file f ON fc.file_id = f.id " +
+            "WHERE f.filename = :filename " +
+            "AND f.path = :path " +
+            "AND fc.search_vector @@ to_tsquery('english', :keyword)",
+            nativeQuery = true)
+    FileContents searchFileByKeyword(@Param("keyword") String keyword, @Param("path") String path, @Param("filename") String filename);
+
+
+
 
     FileContents findByFile(File file);
-
-    @Query("SELECT f.preview FROM FileContents f WHERE f.file.filename = :filename AND f.file.path = :filepath")
-    String findPreviewByPathAndFilename(@Param("filename") String filename, @Param("filepath") String filepath);
-
 
 }
 

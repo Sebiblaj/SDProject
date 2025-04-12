@@ -33,13 +33,16 @@ public class FileContentsController {
         return preview != null ? ResponseEntity.ok(preview) : ResponseEntity.notFound().build();
     }
 
-    @GetMapping(value = "search",params = {"filePath","fileName","keyword"})
-    public ResponseEntity<FileSearchResult> searchInFileByPathAndName(@RequestParam String filePath,
-                                                                      @RequestParam String fileName,
-                                                                      @RequestParam String keyword) {
-        FileSearchResult fileSearchResult = fileContentsService.searchInFileByPathAndName(filePath,fileName,keyword);
-        return fileSearchResult != null ? ResponseEntity.ok(fileSearchResult) : ResponseEntity.notFound().build();
+    @GetMapping(value = "search")
+    public ResponseEntity<List<FileSearchResult>> searchFiles(
+            @RequestParam(required = false) List<String> filePath,
+            @RequestParam(required = false) List<String> fileName,
+            @RequestParam(required = false) List<String> content) {
+
+        List<FileSearchResult> results = fileContentsService.searchInFileByPathAndName(filePath, fileName, content);
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
+
 
     @GetMapping(value = "search",params = "keyword")
     public ResponseEntity<List<FileSearchResult>> searchInFileByPathAndName(@RequestParam String keyword) {
@@ -57,6 +60,7 @@ public class FileContentsController {
 
     @PostMapping(value = "add")
     public ResponseEntity<String> setFileContentsById(@RequestBody List<FileContentDTO> fileContentDTOS) {
+        System.out.println("Reached here");
         String fileContents = fileContentsService.setFileContents(fileContentDTOS);
         return fileContents.equals("File Content Added Successfully")  ? ResponseEntity.ok("Contents added successfully") : ResponseEntity.ok("Could not load contents");
     }

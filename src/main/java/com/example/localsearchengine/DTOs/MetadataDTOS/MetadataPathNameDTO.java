@@ -4,12 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Map;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class MetadataDTO {
-
-    Map<String,Object> metadata;
+public class MetadataPathNameDTO {
+    private String path;
+    private String filename;
+    private MetadataDTO metadataDTO;
 }

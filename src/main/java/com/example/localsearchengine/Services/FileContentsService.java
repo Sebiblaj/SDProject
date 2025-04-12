@@ -70,28 +70,99 @@ public class FileContentsService {
                         "User has accessed the contents preview for the file."
                 )
         ));
-        return fileContentsRepository.findPreviewByPathAndFilename(path, filename);
+        return fileContentsRepository.getFileContentsByPathAndFilename(path, filename).getPreview();
     }
 
-    public FileSearchResult searchInFileByPathAndName(String path, String filename, String keyword) {
-        FileContents fileContents = fileContentsRepository.searchFilesByKeyword(keyword, path, filename);
+    public List<FileSearchResult> searchInFileByPathAndName(List<String> paths, List<String> filenames, List<String> keywords) {
+        List<FileSearchResult> results = new ArrayList<>();
+        boolean success = true;
+
+        System.out.println("The paths are " + paths);
+        System.out.println("The filenames are " + filenames);
+        System.out.println("The keywords are " + keywords);
+
+        List<String> searchPaths = (paths == null || paths.isEmpty()) ? null : paths;
+        List<String> searchFilenames = (filenames == null || filenames.isEmpty()) ? null : filenames;
+
+        if (keywords == null || keywords.isEmpty()) {
+            success = false;
+        } else {
+            String tsQueryString = String.join(" & ", keywords);
+            List<FileContents> matchedFiles = new ArrayList<>();
+
+            if (searchPaths == null && searchFilenames == null) {
+                matchedFiles = fileContentsRepository.searchFileByKeyword(tsQueryString);
+            } else if (searchPaths != null && searchFilenames == null) {
+                for (String path : searchPaths) {
+                    matchedFiles.addAll(fileContentsRepository.getFileContentsByPath(path, tsQueryString));
+                }
+            } else if (searchPaths == null) {
+                for (String filename : searchFilenames) {
+                    matchedFiles.addAll(fileContentsRepository.getFileContentsByName(filename, tsQueryString));
+                }
+            } else {
+                for (String path : searchPaths) {
+                    for (String filename : searchFilenames) {
+                        matchedFiles.add(fileContentsRepository.searchFileByKeyword(path, filename, tsQueryString));
+                    }
+                }
+            }
+
+            if (matchedFiles.isEmpty()) {
+                success = false;
+            } else {
+                for (FileContents fileContent : matchedFiles) {
+                    System.out.println("Checking " + fileContent);
+                    String finalFilename = fileContent.getFile().getFilename();
+                    String finalPath = fileContent.getFile().getPath();
+
+                    List<Integer> lineNumbers = new ArrayList<>();
+                    List<String> excerpts = new ArrayList<>();
+
+                    List<String> lines = fileContent.getContents().lines().toList();
+                    for (int i = 0; i < lines.size(); i++) {
+                        String line = lines.get(i);
+                        for (String keyword : keywords) {
+                            if (line.contains(keyword)) {
+                                lineNumbers.add(i + 1);
+                                excerpts.add(line);
+                            }
+                        }
+                    }
+
+                    if (!lineNumbers.isEmpty()) {
+                        results.add(new FileSearchResult(finalFilename, finalPath, lineNumbers, excerpts));
+                    }
+                }
+            }
+        }
+
+        String description;
+        if (success) {
+            description = "User has accessed the file(s) to search in contents for keyword(s) '" +
+                    String.join(", ", keywords) + "'.";
+        } else {
+            description = "User has tried to access file(s) to search in contents but failed";
+        }
 
         sendMessage(new LoggerMessage(
                 Timestamp.valueOf(LocalDateTime.now()),
                 "sebir",
                 new LoggerMessage.ActivityDetails(
                         1,
-                        new ArrayList<>(List.of(path + "/" + filename)),
-                        "User has accessed the contents for the file and searched for the keyword '" + keyword + "'."
+                        List.of(
+                                (searchPaths != null ? String.join(",", searchPaths) : "*") + "/" +
+                                        (searchFilenames != null ? String.join(",", searchFilenames) : "*")
+                        ),
+                        description
                 )
         ));
 
-        return fileContents != null ? searchInContents(fileContents.getFile().getFilename(),
-                fileContents.getFile().getPath(),fileContents.getContents(), keyword) : null;
+        return results.isEmpty() ? null : results;
     }
 
     public List<FileSearchResult> searchInFilesForKeyword(String keyword) {
-        List<FileContents> fileContentsList = fileContentsRepository.searchFilesByKeyword(keyword);
+        List<FileContents> fileContentsList = fileContentsRepository.searchFileByKeyword(keyword);
         List<FileSearchResult> fileSearchResults = new ArrayList<>();
         if (!fileContentsList.isEmpty()) {
             for (FileContents fileContent : fileContentsList) {
@@ -133,6 +204,8 @@ public class FileContentsService {
                     fileContents.setFile(file);
                     fileContents.setContents(fileDTO.getContent());
                 }
+                String preview = fileDTO.getContent().length() > 100 ? fileDTO.getContent().substring(0, 100) + "..." : fileDTO.getContent();
+                fileContents.setPreview(preview);
                 fileContentsList.add(fileContents);
             }
         }

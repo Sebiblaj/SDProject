@@ -18,7 +18,8 @@ public interface FileRepository extends JpaRepository<File, String> {
 
     File getFileByPathAndFilename(String path, String filename);
 
-    List<File> findAllByExtension(String ext);
+    @Query("SELECT f FROM File f WHERE f.type.type = :ext")
+    List<File> findAllByExtension(@Param("ext") String ext);
 
     @Modifying
     @Query("DELETE FROM File f WHERE (f.path, f.filename) IN :files")
@@ -28,8 +29,11 @@ public interface FileRepository extends JpaRepository<File, String> {
     @Query("DELETE FROM File f WHERE f.path = :path AND f.filename = :filename")
     void deleteByPathAndFilename(@Param("path") String path,@Param("filename") String filename);
 
-    @Query("SELECT f FROM File f WHERE f.filesize > :min AND f.filesize <= :max")
-    List<File> findBySizeGreaterThan(@Param("min") String min, @Param("max") String max);
+    @Query(value = """
+    SELECT f.* FROM file f JOIN metadata m ON f.id = m.file_id JOIN metadata_values mv ON mv.metadata_id = m.id
+    WHERE mv.key = 'filesize' AND CAST(mv.value AS BIGINT) BETWEEN :min AND :max""", nativeQuery = true)
+    List<File> findByFileSizeBetween(@Param("min") long min, @Param("max") long max);
+
 
     @Query("SELECT f.tags FROM File f WHERE f.path = :path AND f.filename = :filename")
     List<FileTag> findTagsForFile(@Param("path") String path, @Param("filename") String filename);

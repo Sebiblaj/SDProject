@@ -4,6 +4,7 @@ import com.example.localsearchengine.DTOs.LoggerMessage;
 import com.example.localsearchengine.DTOs.MetadataDTOS.KeyDTO;
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataDTO;
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataEntries;
+import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataPathNameDTO;
 import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.Entites.Metadata;
 import com.example.localsearchengine.Persistence.FileRepository;
@@ -143,6 +144,26 @@ public class MetadataService {
                 )
         ));
         return success ? "Metadata added for file" : null;
+    }
+
+    @Transactional
+    public String addMultipleMetadata(List<MetadataPathNameDTO> metadataPathNameDTO) {
+
+        for (MetadataPathNameDTO dto : metadataPathNameDTO) {
+            List<MetadataEntries> entries = dto.getMetadataDTO().getMetadata().entrySet().stream()
+                    .map(entry -> new MetadataEntries(entry.getKey(), (String) entry.getValue()))
+                    .toList();
+
+            String partialResult = addMetadataForFile(dto.getPath(), dto.getFilename(), entries);
+
+            if (partialResult == null) {
+                throw new RuntimeException("Failed to add metadata for file: "
+                        + dto.getFilename() + " at path: " + dto.getPath());
+            }
+
+        }
+
+        return "Metadata added successfully";
     }
 
     @Transactional

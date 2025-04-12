@@ -18,7 +18,7 @@ public class Metadata {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private int id;
+    private Integer id;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "metadata_values", joinColumns = @JoinColumn(name = "metadata_id"))

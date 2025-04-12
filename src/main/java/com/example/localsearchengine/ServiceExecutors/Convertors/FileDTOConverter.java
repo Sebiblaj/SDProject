@@ -3,7 +3,10 @@ package com.example.localsearchengine.ServiceExecutors.Convertors;
 import com.example.localsearchengine.DTOs.FileDTOS.FileDTO;
 import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.Entites.FileTag;
+import com.example.localsearchengine.Entites.FileType;
+import com.example.localsearchengine.Entites.Metadata;
 import com.example.localsearchengine.Persistence.FileTagsRepository;
+import com.example.localsearchengine.Persistence.FileTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -16,30 +19,38 @@ public class FileDTOConverter implements Convertor<FileDTO, File> {
     @Autowired
     private FileTagsRepository fileTagsRepository;
 
+    @Autowired
+    private FileTypeRepository fileTypeRepository;
+
     @Override
     public File convert(FileDTO fileDTO) {
         File newFile = new File();
         newFile.setFilename(fileDTO.getFilename());
         newFile.setPath(fileDTO.getPath());
-        newFile.setFilesize(fileDTO.getFilesize());
-        newFile.setAccessedAt(fileDTO.getAccessedAt());
-        newFile.setCreatedAt(fileDTO.getCreatedAt());
-        newFile.setExtension(fileDTO.getExtension());
-        newFile.setUpdatedAt(fileDTO.getUpdatedAt());
+
+        FileType fileType = fileTypeRepository.getFileTypeByType(fileDTO.getType());
+        newFile.setType(fileType);
 
         Set<FileTag> tags = new HashSet<>();
         for (String tagName : fileDTO.getTags()) {
             FileTag tag = fileTagsRepository.findByTag(tagName);
-            if(tag == null) {
+            if (tag == null) {
                 tag = new FileTag();
                 tag.setTag(tagName);
                 tag.setFiles(new HashSet<>());
+                fileTagsRepository.save(tag);
             }
             tag.getFiles().add(newFile);
             tags.add(tag);
         }
 
         newFile.setTags(tags);
+
+        Metadata metadata = new Metadata(null, fileDTO.getMetadata(), newFile);
+        newFile.setMetadata(metadata);
+
+        System.out.println("File Converted successfully");
         return newFile;
     }
 }
+

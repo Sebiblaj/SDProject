@@ -10,18 +10,25 @@ import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+
 @Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(
+        name = "file_contents",
+        indexes = @Index(name = "idx_search_vector", columnList = "search_vector")
+)
 public class FileContents {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
+    @Column(columnDefinition = "TEXT")
     private String contents;
 
+    @Column(columnDefinition = "TEXT")
     private String preview;
 
     @Column(columnDefinition = "tsvector")
@@ -33,18 +40,8 @@ public class FileContents {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private File file;
 
-    @PrePersist
-    @PreUpdate
-    public void updateSearchVector() {
-        if (contents != null && !contents.isEmpty()) {
-            this.searchVector = generateSearchVector(contents);
-        }
-    }
-
-    private String generateSearchVector(String contents) {
-        return "to_tsvector('english', '" + contents.replace("'", "''") + "')";
-    }
 }
+
 
 
 

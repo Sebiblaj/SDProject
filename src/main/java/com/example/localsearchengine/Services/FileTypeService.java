@@ -24,16 +24,26 @@ public class FileTypeService {
         for (FileType fileType : fileTypes) {
             FileTypeDTO fileTypeDTO = new FileTypeDTO();
             fileTypeDTO.setType(fileType.getType());
+            fileTypeDTO.setWeight(fileType.getWeight());
             fileTypeDTOs.add(fileTypeDTO);
         }
         return fileTypeDTOs;
     }
 
     @Transactional
-    public String saveFileType(String ext) {
+    public String updateFileType(FileTypeDTO fileTypeDTO) {
+        FileType fileType = fileTypeRepository.getFileTypeByType(fileTypeDTO.getType());
+        if(fileType==null) { return null;}
+        fileType.setWeight(fileType.getWeight());
+        fileTypeRepository.save(fileType);
+        return "File Type Updated";
+    }
+
+    @Transactional
+    public String saveFileType(String ext,Double weight) {
         FileType fileType = new FileType();
         fileType.setType(ext);
-
+        fileType.setWeight(weight);
         fileTypeRepository.save(fileType);
 
         return "FileType saved successfully";
@@ -49,7 +59,6 @@ public class FileTypeService {
         }
         return "FileType deleted successfully";
     }
-
 
     public Boolean checkFileType(String type) {
         return fileTypeRepository.existsByFileType(type);

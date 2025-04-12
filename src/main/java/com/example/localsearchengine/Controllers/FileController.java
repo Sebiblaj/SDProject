@@ -3,6 +3,7 @@ package com.example.localsearchengine.Controllers;
 import com.example.localsearchengine.DTOs.FileDTOS.PathAndName;
 import com.example.localsearchengine.DTOs.FileDTOS.ReturnedFileDTO;
 import com.example.localsearchengine.DTOs.FileDTOS.Tag;
+import com.example.localsearchengine.DTOs.FileDTOS.TagPathNameDTO;
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataEntries;
 import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.Services.FileService;
@@ -113,6 +114,11 @@ The next part is for the Tags of the file
                                                 @RequestParam String fileName,
                                                 @RequestBody List<Tag> tags) {
         return fileService.addTagsToFile(filePath,fileName, tags) != null ? ResponseEntity.ok("Tags added successfully") : ResponseEntity.notFound().build();
+    }
+
+    @PostMapping(value = "tags/add")
+    public ResponseEntity<String> addTagsToFile(@RequestBody List<TagPathNameDTO> tags) {
+        return fileService.addMultipleTags(tags) != null ? ResponseEntity.ok("Tags added successfully") : ResponseEntity.ok("Could not add tags");
     }
 
     @DeleteMapping(value = "tags/delete",params = {"filePath,fileName"})

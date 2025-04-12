@@ -23,9 +23,15 @@ public class FileTypeController {
         return fileTypeService.checkFileType(ext) ? ResponseEntity.ok(true) : ResponseEntity.notFound().build();
     }
 
+    @PutMapping(value = "update")
+    public ResponseEntity<String> updateType(@RequestBody FileTypeDTO fileTypeDTO) {
+        String result = fileTypeService.updateFileType(fileTypeDTO);
+        return result != null ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
+    }
+
     @PostMapping(value = "add")
-    public ResponseEntity<String> addFileType(@RequestParam String ext) {
-        return ResponseEntity.ok(fileTypeService.saveFileType(ext));
+    public ResponseEntity<String> addFileType(@RequestParam String ext,@RequestParam Double weight) {
+        return ResponseEntity.ok(fileTypeService.saveFileType(ext,weight));
     }
 
     @DeleteMapping(value = "delete")

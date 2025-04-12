@@ -16,6 +16,8 @@ public class FileType {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
+    private double weight;
+
     @Column(nullable = false, unique = true)
     private String type;
 }

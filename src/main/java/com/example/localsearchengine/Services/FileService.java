@@ -1,9 +1,6 @@
 package com.example.localsearchengine.Services;
 
-import com.example.localsearchengine.DTOs.FileDTOS.FileDTO;
-import com.example.localsearchengine.DTOs.FileDTOS.PathAndName;
-import com.example.localsearchengine.DTOs.FileDTOS.ReturnedFileDTO;
-import com.example.localsearchengine.DTOs.FileDTOS.Tag;
+import com.example.localsearchengine.DTOs.FileDTOS.*;
 import com.example.localsearchengine.DTOs.LoggerMessage;
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataEntries;
 import com.example.localsearchengine.Entites.File;
@@ -123,7 +120,7 @@ public class FileService {
 
         } else if (payload instanceof List<?>) {
             boolean success=true;
-            List<FileDTO> fileDTOs = objectMapper.convertValue(payload, new TypeReference<List<FileDTO>>() {});
+            List<FileDTO> fileDTOs = objectMapper.convertValue(payload, new TypeReference<>() {});
 
             List<String> filenames = fileDTOs.stream().map(FileDTO::getFilename).toList();
             List<String> paths = fileDTOs.stream().map(FileDTO::getPath).toList();
@@ -145,7 +142,8 @@ public class FileService {
                     continue;
                 }
 
-                File newFile = fileDTOConverter.convert(fileDTO);;
+                File newFile = fileDTOConverter.convert(fileDTO);
+
                 FileType fileType = fileTypeMap.get(fileDTO.getType());
                 if (fileType == null) {
                     success = false;
@@ -206,7 +204,7 @@ public class FileService {
 
                     field.set(oldFile, convertedValue);
                 } catch (NoSuchFieldException | IllegalAccessException e) {
-                    throw new RuntimeException("Error updating field: " + fieldName, e);
+                    success = false;
                 }
             }
         }
@@ -322,6 +320,11 @@ public class FileService {
         List<File> files = fileRepository.findAll();
         int size = files.size();
         List<String> names = files.stream().map(File::getFilename).toList();
+        List<String> paths = files.stream().map(File::getPath).toList();
+        for(int i = 0 ; i< names.size() ; i++){
+            deleteAllTagsForFile(paths.get(i), names.get(i));
+
+        }
         fileRepository.deleteAll();
 
         sendMessage(new LoggerMessage(
@@ -336,7 +339,7 @@ public class FileService {
     }
 
     public List<ReturnedFileDTO> findBySizeInterval(String min, String max) {
-        List<File> files = fileRepository.findBySizeGreaterThan(min, max);
+        List<File> files = fileRepository.findByFileSizeBetween(Long.parseLong(min), Long.parseLong(max));
         List<ReturnedFileDTO> returnedFiles = new ArrayList<>();
         if (files.isEmpty()) { return returnedFiles; }
         files.forEach(file -> {
@@ -447,10 +450,10 @@ public class FileService {
 
             Set<FileTag> updatedTags = oldFile.getTags();
             for (Tag tag : tags) {
-                FileTag fileTag = fileTagsRepository.findByTag(tag.getTag());
+                FileTag fileTag = fileTagsRepository.findByTag(tag.getTag().toLowerCase());
                 if (fileTag == null) {
                     fileTag = new FileTag();
-                    fileTag.setTag(tag.getTag());
+                    fileTag.setTag(tag.getTag().toLowerCase());
                     fileTag.setFiles(new HashSet<>());
                 }
                 fileTag.getFiles().add(oldFile);
@@ -478,6 +481,20 @@ public class FileService {
                 )
         ));
         return success ? "Tags added successfully" : null;
+    }
+
+    @Transactional
+    public String addMultipleTags(List<TagPathNameDTO> tagPathNameDTO) {
+        for(TagPathNameDTO dto : tagPathNameDTO) {
+            String partialResult = addTagsToFile(dto.getPath(), dto.getFilename(), dto.getTags());
+
+            if (partialResult == null) {
+                throw new RuntimeException("Failed to add tags for file: "
+                        + dto.getFilename() + " at path: " + dto.getPath());
+            }
+        }
+
+        return "Tags added successfully";
     }
 
     @Transactional
@@ -550,6 +567,5 @@ public class FileService {
 
         return succeeded ? "Tags deleted successfully" : null;
     }
-
 
 }

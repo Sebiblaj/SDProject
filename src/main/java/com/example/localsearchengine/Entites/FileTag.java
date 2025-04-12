@@ -1,5 +1,6 @@
 package com.example.localsearchengine.Entites;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -23,6 +24,20 @@ public class FileTag {
 
     @ManyToMany(mappedBy = "tags")
     @JsonIgnore
+    @JsonBackReference
     private Set<File> files;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FileTag fileTag = (FileTag) o;
+        return id != null && id.equals(fileTag.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return 31;
+    }
 }
 
