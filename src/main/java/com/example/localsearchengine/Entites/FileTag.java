@@ -39,5 +39,14 @@ public class FileTag {
     public int hashCode() {
         return 31;
     }
+
+    @Override
+    public String toString() {
+        return "FileTag{" +
+                "id=" + id +
+                ", tag='" + tag + '\'' +
+                '}';
+    }
+
 }
 

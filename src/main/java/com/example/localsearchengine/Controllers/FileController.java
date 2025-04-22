@@ -40,7 +40,9 @@ public class FileController {
 
     @GetMapping(value = "search", params = "fileName")
     public ResponseEntity<List<ReturnedFileDTO>> searchFiles(@RequestParam String fileName) {
-        List<ReturnedFileDTO> files = fileService.searchFilesByName(fileName);
+        String cleanedFileName = fileName.replace("\"", "");
+        List<ReturnedFileDTO> files = fileService.searchFilesByName("%" + cleanedFileName + "%");
+
         return files.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(files);
     }
 
@@ -59,6 +61,7 @@ public class FileController {
 
     @PostMapping("add")
     public ResponseEntity<String> addFileFlexible(@RequestBody Object payload) {
+        System.out.println("Adding file " + payload);
         String response = fileService.addFile(payload);
         return response != null ? ResponseEntity.ok(response) : ResponseEntity.ok("Could not add files");
 

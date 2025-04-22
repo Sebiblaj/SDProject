@@ -55,6 +55,17 @@ public class File {
     public int hashCode() {
         return 31;
     }
+
+    @Override
+    public String toString() {
+        return "File{" +
+                "id=" + id +
+                ", filename='" + filename + '\'' +
+                ", path='" + path + '\'' +
+                ", type=" + type +
+                '}';
+    }
+
 }
 
 

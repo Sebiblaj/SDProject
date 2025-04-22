@@ -14,5 +14,6 @@ public class ReturnedFileDTO {
 
     private String filename;
     private String path;
+    private String extension;
 }
 

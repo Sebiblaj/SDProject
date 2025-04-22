@@ -17,6 +17,6 @@ public class FileDTO {
     private String path;
     private String type;
     private List<String> tags;
-    private Map<String,String> metadata;
+    private Map<String,Object> metadata;
 
 }

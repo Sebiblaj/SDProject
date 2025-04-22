@@ -11,7 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class FileDTOConverter implements Convertor<FileDTO, File> {
@@ -46,7 +48,14 @@ public class FileDTOConverter implements Convertor<FileDTO, File> {
 
         newFile.setTags(tags);
 
-        Metadata metadata = new Metadata(null, fileDTO.getMetadata(), newFile);
+        Map<String, String> stringMetadata = fileDTO.getMetadata().entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().toString()
+                ));
+        Metadata metadata = new Metadata(null, stringMetadata, newFile);
+
         newFile.setMetadata(metadata);
 
         System.out.println("File Converted successfully");

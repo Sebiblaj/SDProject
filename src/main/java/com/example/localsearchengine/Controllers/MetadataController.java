@@ -18,7 +18,7 @@ public class MetadataController {
     @Autowired
     public MetadataService metadataService;
 
-    @GetMapping(value = "",params = {"filePath,fileName"})
+    @GetMapping(value = "")
     public ResponseEntity<MetadataDTO> getMetadataForFile(@RequestParam String filePath,
                                                           @RequestParam String fileName) {
         MetadataDTO metadata = metadataService.getMetadataForFile(filePath, fileName);
@@ -26,7 +26,7 @@ public class MetadataController {
     }
 
 
-    @PutMapping(value = "modify",params = {"filePath","fileName"})
+    @PutMapping(value = "modify")
     public ResponseEntity<String> updateMetadataForFile(@RequestParam String filePath,
                                                         @RequestParam String fileName,
                                                         @RequestBody List<MetadataEntries> entries) {

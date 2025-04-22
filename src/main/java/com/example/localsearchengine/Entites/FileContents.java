@@ -31,11 +31,11 @@ public class FileContents {
     @Column(columnDefinition = "TEXT")
     private String preview;
 
-    @Column(columnDefinition = "tsvector")
-    @ColumnTransformer(read = "search_vector::text", write = "?::tsvector")
+
+    @Column(name = "search_vector", insertable = false, updatable = false)
     private String searchVector;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     @JoinColumn(name = "file_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_file_contents", value = ConstraintMode.CONSTRAINT))
     @OnDelete(action = OnDeleteAction.CASCADE)
     private File file;

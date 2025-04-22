@@ -14,6 +14,7 @@ public class FileConvertor implements Convertor<File,ReturnedFileDTO> {
         ReturnedFileDTO returnedFileDTO = new ReturnedFileDTO();
         returnedFileDTO.setPath(file.getPath());
         returnedFileDTO.setFilename(file.getFilename());
+        returnedFileDTO.setExtension(file.getType().getType());
         return returnedFileDTO;
     }
 }

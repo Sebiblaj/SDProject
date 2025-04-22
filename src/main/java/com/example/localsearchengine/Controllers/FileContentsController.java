@@ -40,14 +40,7 @@ public class FileContentsController {
             @RequestParam(required = false) List<String> content) {
 
         List<FileSearchResult> results = fileContentsService.searchInFileByPathAndName(filePath, fileName, content);
-        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
-    }
-
-
-    @GetMapping(value = "search",params = "keyword")
-    public ResponseEntity<List<FileSearchResult>> searchInFileByPathAndName(@RequestParam String keyword) {
-        List<FileSearchResult> fileSearchResult = fileContentsService.searchInFilesForKeyword(keyword);
-        return !fileSearchResult.isEmpty() ? ResponseEntity.ok(fileSearchResult) : ResponseEntity.notFound().build();
+        return results == null || results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 
     @PostMapping(value = "add",params = {"filePath","fileName"})

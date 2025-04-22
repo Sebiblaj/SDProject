@@ -4,6 +4,7 @@ import com.example.localsearchengine.DTOs.ContentDTOS.ContentsDTO;
 import com.example.localsearchengine.DTOs.ContentDTOS.FileContentDTO;
 import com.example.localsearchengine.DTOs.ContentDTOS.FileSearchResult;
 import com.example.localsearchengine.DTOs.LoggerMessage;
+import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataEntries;
 import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.Entites.FileContents;
 import com.example.localsearchengine.Persistence.FileContentsRepository;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,9 @@ public class FileContentsService {
 
     @Autowired
     private FileRepository fileRepository;
+
+    @Autowired
+    private MetadataService metadataService;
 
     @Value("${kafka.topic.logs}")
     private String TOPIC;
@@ -55,6 +60,10 @@ public class FileContentsService {
                         "User has accessed the contents for the file."
                 )
         ));
+        long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        MetadataEntries metadataEntries = new MetadataEntries("lastaccess", String.valueOf(timestamp));
+        metadataService.modifyMetadataForFile(path,filename,new ArrayList<>(List.of(metadataEntries)));
+
 
         return fileContents != null ? fileContents.getContents() : null;
     }
@@ -70,6 +79,11 @@ public class FileContentsService {
                         "User has accessed the contents preview for the file."
                 )
         ));
+
+        long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        MetadataEntries metadataEntries = new MetadataEntries("lastaccess", String.valueOf(timestamp));
+        metadataService.modifyMetadataForFile(path,filename,new ArrayList<>(List.of(metadataEntries)));
+
         return fileContentsRepository.getFileContentsByPathAndFilename(path, filename).getPreview();
     }
 
@@ -103,7 +117,7 @@ public class FileContentsService {
             } else {
                 for (String path : searchPaths) {
                     for (String filename : searchFilenames) {
-                        matchedFiles.add(fileContentsRepository.searchFileByKeyword(path, filename, tsQueryString));
+                        matchedFiles.addAll(fileContentsRepository.searchFileByKeyword(path, filename, tsQueryString));
                     }
                 }
             }
@@ -112,7 +126,7 @@ public class FileContentsService {
                 success = false;
             } else {
                 for (FileContents fileContent : matchedFiles) {
-                    System.out.println("Checking " + fileContent);
+
                     String finalFilename = fileContent.getFile().getFilename();
                     String finalPath = fileContent.getFile().getPath();
 
@@ -123,7 +137,7 @@ public class FileContentsService {
                     for (int i = 0; i < lines.size(); i++) {
                         String line = lines.get(i);
                         for (String keyword : keywords) {
-                            if (line.contains(keyword)) {
+                            if (line.toLowerCase().contains(keyword.toLowerCase())) {
                                 lineNumbers.add(i + 1);
                                 excerpts.add(line);
                             }
@@ -133,6 +147,10 @@ public class FileContentsService {
                     if (!lineNumbers.isEmpty()) {
                         results.add(new FileSearchResult(finalFilename, finalPath, lineNumbers, excerpts));
                     }
+
+                    long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                    MetadataEntries metadataEntries = new MetadataEntries("lastaccess", String.valueOf(timestamp));
+                    metadataService.modifyMetadataForFile(finalPath,finalFilename,new ArrayList<>(List.of(metadataEntries)));
                 }
             }
         }
@@ -151,38 +169,14 @@ public class FileContentsService {
                 new LoggerMessage.ActivityDetails(
                         1,
                         List.of(
-                                (searchPaths != null ? String.join(",", searchPaths) : "*") + "/" +
-                                        (searchFilenames != null ? String.join(",", searchFilenames) : "*")
+                                String.join(",", results.stream().map(FileSearchResult::getPath).toList()) + "/" +
+                                        (String.join(",", results.stream().map(FileSearchResult::getFilename).toList()))
                         ),
                         description
                 )
         ));
 
         return results.isEmpty() ? null : results;
-    }
-
-    public List<FileSearchResult> searchInFilesForKeyword(String keyword) {
-        List<FileContents> fileContentsList = fileContentsRepository.searchFileByKeyword(keyword);
-        List<FileSearchResult> fileSearchResults = new ArrayList<>();
-        if (!fileContentsList.isEmpty()) {
-            for (FileContents fileContent : fileContentsList) {
-                fileSearchResults.add(searchInContents(fileContent.getFile().getFilename(),
-                        fileContent.getFile().getPath(), fileContent.getContents(), keyword));
-            }
-        }
-
-        sendMessage(new LoggerMessage(
-                Timestamp.valueOf(LocalDateTime.now()),
-                "sebir",
-                new LoggerMessage.ActivityDetails(
-                        fileSearchResults.size(),
-                        fileSearchResults.stream()
-                                .map(f-> f.getPath() + "/" + f.getFilename()).toList(),
-                        "User has accessed the contents of the files for the keyword: " + keyword + "."
-                )
-        ));
-
-        return fileSearchResults;
     }
 
     @Transactional
@@ -207,6 +201,11 @@ public class FileContentsService {
                 String preview = fileDTO.getContent().length() > 100 ? fileDTO.getContent().substring(0, 100) + "..." : fileDTO.getContent();
                 fileContents.setPreview(preview);
                 fileContentsList.add(fileContents);
+
+                long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                MetadataEntries metadataEntries = new MetadataEntries("lastaccess", String.valueOf(timestamp));
+                MetadataEntries metadataEntries2 = new MetadataEntries("lastmodified",String.valueOf(timestamp));
+                metadataService.modifyMetadataForFile(fileDTO.getPath(),fileDTO.getFilename(),new ArrayList<>(List.of(metadataEntries, metadataEntries2)));
             }
         }
 
@@ -246,11 +245,18 @@ public class FileContentsService {
             }
         }
 
+        long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        MetadataEntries metadataEntries = new MetadataEntries("lastaccess", String.valueOf(timestamp));
+        List<MetadataEntries> entries = new ArrayList<>();
+        entries.add(metadataEntries);
         if (success) {
             description = "User has set contents to the file.";
         }else{
             description = "User has tried to set contents to the file but the file does not exist.";
+            MetadataEntries metadataEntries2 = new MetadataEntries("lastmodified",String.valueOf(timestamp));
+            entries.add(metadataEntries2);
         }
+        metadataService.modifyMetadataForFile(path,filename,entries);
 
         sendMessage(new LoggerMessage(
                 Timestamp.valueOf(LocalDateTime.now()),
@@ -280,22 +286,10 @@ public class FileContentsService {
                         "User has deleted the contents of the file."
                 )
         ));
+
+        long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        MetadataEntries metadataEntries = new MetadataEntries("lastaccess", String.valueOf(timestamp));
+        MetadataEntries metadataEntries2 = new MetadataEntries("lastmodified",String.valueOf(timestamp));
+        metadataService.modifyMetadataForFile(path,filename,new ArrayList<>(List.of(metadataEntries, metadataEntries2)));
     }
-
-    private FileSearchResult searchInContents(String filename,String path, String contents, String keyword) {
-        List<Integer> lineNumbers = new ArrayList<>();
-        List<String> excerpts = new ArrayList<>();
-        String[] lines = contents.split("\n");
-
-        for (int i = 0; i < lines.length; i++) {
-            if (lines[i].contains(keyword)) {
-                lineNumbers.add(i + 1);
-                excerpts.add(lines[i].trim());
-            }
-        }
-
-        return lineNumbers.isEmpty() ? null : new FileSearchResult(filename,path, lineNumbers, excerpts);
-    }
-
-
 }

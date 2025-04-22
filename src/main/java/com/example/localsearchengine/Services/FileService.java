@@ -65,7 +65,7 @@ public class FileService {
     public List<ReturnedFileDTO> getFiles() {
 
         List<ReturnedFileDTO> returnedFileList = new ArrayList<>();
-        fileRepository.findAll().forEach(file -> {
+        fileRepository.findAllFiles().forEach(file -> {
             returnedFileList.add(fileConvertor.convert(file));
         });
 
@@ -101,24 +101,7 @@ public class FileService {
 
     @Transactional
     public String addFile(Object payload) {
-        if (payload instanceof FileDTO) {
-            FileDTO fileDTO = objectMapper.convertValue(payload, FileDTO.class);
-            File newFile = fileDTOConverter.convert(fileDTO);
-            fileRepository.save(newFile);
-
-            sendMessage(new LoggerMessage(
-                    Timestamp.valueOf(LocalDateTime.now()),
-                    "sebir",
-                    new ActivityDetails(
-                            1,
-                            new ArrayList<>(List.of(newFile.getPath() + "/" + newFile.getFilename())),
-                            "User has set a file into the system."
-                    )
-            ));
-
-            return "File added successfully";
-
-        } else if (payload instanceof List<?>) {
+        if (payload instanceof List<?>) {
             boolean success=true;
             List<FileDTO> fileDTOs = objectMapper.convertValue(payload, new TypeReference<>() {});
 
@@ -179,8 +162,26 @@ public class FileService {
                     )
             ));
             return "Files added successfully";
-        }
+        }else if (payload instanceof Map) {
+            FileDTO fileDTO = objectMapper.convertValue(payload, FileDTO.class);
+            File newFile = fileDTOConverter.convert(fileDTO);
 
+            System.out.println("Adding file " + newFile);
+            fileRepository.save(newFile);
+
+            sendMessage(new LoggerMessage(
+                    Timestamp.valueOf(LocalDateTime.now()),
+                    "sebir",
+                    new ActivityDetails(
+                            1,
+                            new ArrayList<>(List.of(newFile.getPath() + "/" + newFile.getFilename())),
+                            "User has set a file into the system."
+                    )
+            ));
+
+            return "File added successfully";
+
+        }
         return null;
     }
 
@@ -235,14 +236,19 @@ public class FileService {
         return success ? "File updated successfully" : "File not found";
     }
 
+    @Transactional
     public List<ReturnedFileDTO> searchFilesByName(String filename) {
+        System.out.println("Filename: " + filename);
         List<File> files = fileRepository.findAllByFilename(filename);
         List<ReturnedFileDTO> returnedFiles = new ArrayList<>();
-        if (files.isEmpty()) { return returnedFiles; }
+        if ( files == null) {
+            System.out.println("empty");
+            return returnedFiles; }
         files.forEach(file -> {
             returnedFiles.add(fileConvertor.convert(file));
         });
 
+        System.out.println("returned files: " + files);
         sendMessage(new LoggerMessage(
                 Timestamp.valueOf(LocalDateTime.now()),
                 "sebir",
@@ -418,9 +424,9 @@ public class FileService {
     public List<ReturnedFileDTO> getFilesByTag(List<String> tags) {
         Set<File> uniqueFiles = new HashSet<>();
         for (String tag : tags) {
-            FileTag fileTag = fileTagsRepository.findByTag(tag);
-            if (fileTag == null) { continue; }
-            uniqueFiles.addAll(fileTag.getFiles());
+            Set<FileTag> fileTags = fileTagsRepository.findByTags(tag);
+            if (fileTags == null) { continue; }
+            uniqueFiles.addAll(fileRepository.findFilesByTags(fileTags));
         }
 
         sendMessage(new LoggerMessage(
@@ -442,20 +448,23 @@ public class FileService {
 
     @Transactional
     public String addTagsToFile(String path, String filename, List<Tag> tags) {
-        File oldFile = fileRepository.getFileByPathAndFilename(path, filename);
+        File oldFile = fileRepository.getFileByPathAndFilename(path, filename);  // Find the file
         boolean success = true;
+
         if (oldFile == null) {
             success = false;
-        }else {
+        } else {
+            Set<FileTag> updatedTags = new HashSet<>(oldFile.getTags());
 
-            Set<FileTag> updatedTags = oldFile.getTags();
             for (Tag tag : tags) {
                 FileTag fileTag = fileTagsRepository.findByTag(tag.getTag().toLowerCase());
+
                 if (fileTag == null) {
                     fileTag = new FileTag();
                     fileTag.setTag(tag.getTag().toLowerCase());
                     fileTag.setFiles(new HashSet<>());
                 }
+
                 fileTag.getFiles().add(oldFile);
                 updatedTags.add(fileTag);
             }
@@ -465,10 +474,10 @@ public class FileService {
         }
 
         String description;
-        if(!success){
-            description = "User has tried to set tags to the file but the file " +path+"/"+filename+" was not found.";
-        }else {
-            description = "User has set the following tags to the file: " + tags;
+        if (!success) {
+            description = "User has tried to set tags to the file but the file " + path + "/" + filename + " was not found.";
+        } else {
+            description = "User has set the following tags to the file: " + tags.stream().map(Tag::getTag).collect(Collectors.joining(", "));
         }
 
         sendMessage(new LoggerMessage(
@@ -480,8 +489,10 @@ public class FileService {
                         description
                 )
         ));
+
         return success ? "Tags added successfully" : null;
     }
+
 
     @Transactional
     public String addMultipleTags(List<TagPathNameDTO> tagPathNameDTO) {
