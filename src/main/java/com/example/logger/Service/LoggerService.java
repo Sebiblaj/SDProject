@@ -29,11 +29,9 @@ public class LoggerService {
         return loggerRepository.findAll().stream().map(this::convert).collect(Collectors.toList());
     }
 
-    public List<SystemLogDTO> getLastLogs(ActivityType activityType) { return loggerRepository.findLatestLogs(PageRequest.of(0, 5),activityType).stream().map(this::convert).collect(Collectors.toList()); }
-
-    public List<SystemLogDTO> getLastLogs(QueryType queryType) { return loggerRepository.findLatestLogs(PageRequest.of(0, 5),queryType).stream().map(this::convert).collect(Collectors.toList()); }
-
-    public List<SystemLogDTO> getLastLogs(Status status) { return loggerRepository.findLatestLogs(PageRequest.of(0, 5),status).stream().map(this::convert).collect(Collectors.toList()); }
+    public List<SystemLogDTO> getLastLogs(List<ActivityType> activityType,List<QueryType> queryType,List<Status> status) {
+        return loggerRepository.findLatestLogs(PageRequest.of(0, 5),activityType,queryType,status).stream().map(this::convert).collect(Collectors.toList());
+    }
 
     private SystemLogDTO convert(SystemLog log) {
         return new SystemLogDTO(
@@ -42,7 +40,8 @@ public class LoggerService {
                 log.getFileName(),
                 log.getActivityType(),
                 log.getQueryType(),
-                log.getStatus()
+                log.getStatus(),
+                log.getQuery()
         );
     }
 

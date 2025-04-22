@@ -12,11 +12,27 @@ import java.io.IOException;
 public class Config {
 
     @Bean
-    public File file(){ return new File("SystemLogger.txt"); }
+    public File file() {
+        return new File("logs/SystemLogger.txt");
+    }
 
     @Bean
-    public FileWriter fileWriter(File file) throws IOException { return new FileWriter(file);}
+    public File fileIndex() {
+        return new File("logs/SystemIndex.txt");
+    }
 
     @Bean
-    public ObjectMapper objectMapper(){ return new ObjectMapper(); }
+    public FileWriter fileWriterIndex() throws IOException {
+        return new FileWriter(fileIndex(), true);
+    }
+
+    @Bean
+    public FileWriter fileWriter() throws IOException {
+        return new FileWriter(file(), true);
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
 }

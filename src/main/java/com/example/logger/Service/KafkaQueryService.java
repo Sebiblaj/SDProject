@@ -1,7 +1,7 @@
 package com.example.logger.Service;
 
 
-import com.example.logger.DTOS.LoggerMessage;
+import com.example.logger.DTOS.LoggerQueryMessage;
 import com.example.logger.Entities.ActivityType;
 import com.example.logger.Entities.QueryType;
 import com.example.logger.Entities.Status;
@@ -16,7 +16,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 
 @Component
-public class KafkaService {
+public class KafkaQueryService {
 
     @Autowired
     private FileWriter fileWriter;
@@ -30,7 +30,7 @@ public class KafkaService {
     @KafkaListener(topics = "logs", groupId = "group1")
     public void listen(String messageJson) {
         try {
-            LoggerMessage logMessage = objectMapper.readValue(messageJson, LoggerMessage.class);
+            LoggerQueryMessage logMessage = objectMapper.readValue(messageJson, LoggerQueryMessage.class);
 
             String log = String.format(
                     """
@@ -61,6 +61,7 @@ public class KafkaService {
             for(String file : logMessage.getActivity().getFilesAccessed()) {
                 String path = file.substring(0, file.lastIndexOf('/'));
                 String fileName = file.substring(file.lastIndexOf('/') + 1);
+                if(fileName.contains("*") || path.contains("*")) { continue; }
                 String description = logMessage.getActivity().getDescription();
                 SystemLog newSystemLog = new SystemLog(
                         null,
@@ -69,10 +70,11 @@ public class KafkaService {
                         path,
                         getActivityType(description),
                         getQueryType(description),
-                        getStatus(description)
+                        getStatus(description),
+                        description
                 );
 
-                loggerService.addLog(systemLog);
+                loggerService.addLog(newSystemLog);
             }
 
         } catch (IOException e) {

@@ -21,12 +21,9 @@ public class LoggerController {
     @GetMapping(value = "")
     public ResponseEntity<List<SystemLogDTO>> getLogger() { return ResponseEntity.ok(loggerService.getAllLogs());}
 
-    @GetMapping(value = "",params = "activity")
-    public ResponseEntity<List<SystemLogDTO>> getLoggerByActivity(@RequestParam ActivityType activity) {return ResponseEntity.ok(loggerService.getLastLogs(activity));}
+    @GetMapping(value = "params")
+    public ResponseEntity<List<SystemLogDTO>> getLoggerByActivity(@RequestParam(required = false) List<ActivityType> activity,
+                                                                  @RequestParam(required = false) List<QueryType> queryType,
+                                                                  @RequestParam(required = false) List<Status> status) {return ResponseEntity.ok(loggerService.getLastLogs(activity,queryType,status));}
 
-    @GetMapping(value = "",params = "query")
-    public ResponseEntity<List<SystemLogDTO>> getLoggerByActivity(@RequestParam QueryType queryType) {return ResponseEntity.ok(loggerService.getLastLogs(queryType));}
-
-    @GetMapping(value = "",params = "status")
-    public ResponseEntity<List<SystemLogDTO>> getLoggerByActivity(@RequestParam Status status) {return ResponseEntity.ok(loggerService.getLastLogs(status));}
 }

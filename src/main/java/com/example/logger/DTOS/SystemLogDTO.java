@@ -22,5 +22,6 @@ public class SystemLogDTO {
     private ActivityType activityType;
     private QueryType queryType;
     private Status status;
+    private String message;
 
 }

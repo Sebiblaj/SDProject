@@ -29,4 +29,6 @@ public class SystemLog {
 
     @Enumerated(EnumType.STRING)
     private Status status;
+
+    private String query;
 }
