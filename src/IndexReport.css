@@ -1,0 +1,19 @@
+.index-report-container {
+    padding: 20px;
+  }
+  
+  .index-report-container select, 
+  .index-report-container button {
+    margin-left: 10px;
+  }
+  
+  .report-display {
+    background: #f4f4f4;
+    padding: 15px;
+    margin-top: 15px;
+    max-height: 300px;
+    overflow: auto;
+    white-space: pre-wrap;
+    border: 1px solid #ccc;
+  }
+  
