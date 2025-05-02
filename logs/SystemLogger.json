@@ -1,0 +1,11 @@
+[ {
+  "eventID" : "e129cda1-9aca-4bb6-8975-2695dd4007c1",
+  "eventTime" : 1746214007.423199500,
+  "eventType" : "OrderPlaced",
+  "orderId" : "d8487a7e-5e7b-460f-bb82-eb6adc65aa15",
+  "userId" : "1",
+  "price" : 400,
+  "quantity" : 1,
+  "currency" : "RON",
+  "side" : "SELL"
+} ]
