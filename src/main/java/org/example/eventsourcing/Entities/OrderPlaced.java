@@ -12,14 +12,17 @@ import java.util.UUID;
 public class OrderPlaced extends Event {
     private UUID orderId;
     private String userId;
+    private String company;
     private Integer price;
     private Integer quantity;
     private String currency;
     private String side;
+    private OrderState orderState;
 
-    public OrderPlaced(String userId, Integer price, Integer quantity, String side,String currency) {
+    public OrderPlaced(String userId,String company, Integer price, Integer quantity, String side,String currency) {
         super(EventType.OrderPlaced);
         this.orderId = UUID.randomUUID();
+        this.company = company;
         this.userId = userId;
         this.price = price;
         this.quantity = quantity;

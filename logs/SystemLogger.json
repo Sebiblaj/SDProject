@@ -1,11 +1,99 @@
 [ {
-  "eventID" : "e129cda1-9aca-4bb6-8975-2695dd4007c1",
-  "eventTime" : 1746214007.423199500,
+  "eventID" : "2e5d227d-c2a6-4dd2-b91f-546e00b2d01a",
+  "eventTime" : 1.746369686055478E9,
   "eventType" : "OrderPlaced",
-  "orderId" : "d8487a7e-5e7b-460f-bb82-eb6adc65aa15",
+  "orderId" : "8c45ace0-0ccb-441a-97a2-41d26b730df4",
   "userId" : "1",
+  "company" : "APPL",
   "price" : 400,
+  "quantity" : 5,
+  "currency" : "RON",
+  "side" : "SELL",
+  "orderState" : "PLACED"
+}, {
+  "eventID" : "33a61270-90ec-4021-9b87-3280828c4d7a",
+  "eventTime" : 1.7463696976760156E9,
+  "eventType" : "OrderPlaced",
+  "orderId" : "e1f8c5a4-fce5-466a-a957-5bf14d443574",
+  "userId" : "2",
+  "company" : "APPL",
+  "price" : 80,
   "quantity" : 1,
   "currency" : "RON",
-  "side" : "SELL"
+  "side" : "BUY",
+  "orderState" : "PLACED"
+}, {
+  "eventID" : "19ddd10d-f78b-4020-8864-772d057c4481",
+  "eventTime" : 1.7463696976780164E9,
+  "eventType" : "TradeExecuted",
+  "tradeId" : "6fea6e29-dd4c-4375-a9de-e9496e606464",
+  "buyOrderId" : "e1f8c5a4-fce5-466a-a957-5bf14d443574",
+  "sellOrderId" : "8c45ace0-0ccb-441a-97a2-41d26b730df4",
+  "company" : "APPL",
+  "price" : 80,
+  "quantity" : 1,
+  "currency" : "RON"
+}, {
+  "eventID" : "e56b4a59-098e-4101-ac26-b6255983114b",
+  "eventTime" : 1.7463696976790152E9,
+  "eventType" : "FundsCredited",
+  "userId" : "1",
+  "amount" : 80,
+  "currency" : "RON",
+  "reference" : "STOCK_APPL"
+}, {
+  "eventID" : "16c92047-7cd8-48e0-83c9-457379c07c5c",
+  "eventTime" : 1.7463696976790152E9,
+  "eventType" : "FundsDebited",
+  "userId" : "2",
+  "amount" : 80,
+  "currency" : "RON",
+  "reference" : "STOCK_APPL"
+}, {
+  "eventID" : "2e5d227d-c2a6-4dd2-b91f-546e00b2d01a",
+  "eventTime" : 1.746369686055478E9,
+  "eventType" : "OrderPlaced",
+  "orderId" : "8c45ace0-0ccb-441a-97a2-41d26b730df4",
+  "userId" : "1",
+  "company" : "APPL",
+  "price" : 320,
+  "quantity" : 4,
+  "currency" : "RON",
+  "side" : "SELL",
+  "orderState" : "PLACED"
+}, {
+  "eventID" : "33a61270-90ec-4021-9b87-3280828c4d7a",
+  "eventTime" : 1.7463696976760156E9,
+  "eventType" : "OrderPlaced",
+  "orderId" : "e1f8c5a4-fce5-466a-a957-5bf14d443574",
+  "userId" : "2",
+  "company" : "APPL",
+  "price" : 0,
+  "quantity" : 0,
+  "currency" : "RON",
+  "side" : "BUY",
+  "orderState" : "COMPLETED"
+}, {
+  "eventID" : "1f9356e9-a7a6-4d8f-964d-3a8ea0563775",
+  "eventTime" : 1.7463697328444557E9,
+  "eventType" : "FundsCredited",
+  "userId" : "1",
+  "amount" : 80,
+  "currency" : "RON",
+  "reference" : "ACCOUNT_WITHDRAW"
+}, {
+  "eventID" : "9c223739-e5f5-4390-bdff-f78b5f8539bc",
+  "eventTime" : 1.746369892218827E9,
+  "eventType" : "FundsDebited",
+  "userId" : "1",
+  "amount" : 80,
+  "currency" : "RON",
+  "reference" : "ACCOUNT_WITHDRAW"
+}, {
+  "eventID" : "1400c81f-fcfd-4d99-86bf-db19ccf20a62",
+  "eventTime" : 1746369932.465246700,
+  "eventType" : "OrderCancelled",
+  "orderId" : "8c45ace0-0ccb-441a-97a2-41d26b730df4",
+  "company" : "APPL",
+  "userId" : "1"
 } ]

@@ -13,14 +13,16 @@ public class TradeExecuted extends Event {
     private UUID tradeId;
     private UUID buyOrderId;
     private UUID sellOrderId;
+    private String company;
     private Integer price;
     private Integer quantity;
     private String currency;
 
-    public TradeExecuted(UUID buyOrderId, UUID sellOrderId,
+    public TradeExecuted(UUID buyOrderId, UUID sellOrderId,String company,
                           Integer price, Integer quantity , String currency) {
         super(EventType.TradeExecuted);
         this.tradeId = UUID.randomUUID();
+        this.company = company;
         this.buyOrderId = buyOrderId;
         this.sellOrderId = sellOrderId;
         this.price = price;

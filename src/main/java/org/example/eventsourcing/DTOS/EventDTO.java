@@ -21,4 +21,5 @@ public class EventDTO {
     private UUID buyOrderId;
     private UUID sellOrderId;
     private String currency;
+    private String company;
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.github.cdimascio.dotenv.Dotenv;
+import org.example.eventsourcing.EventExecutors.EventExecutor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,5 +28,8 @@ public class Config {
     public File SystemLogFile() {
         return new File(loggerPath);
     }
+
+    @Bean
+    public EventExecutor eventExecutor() { return new EventExecutor(); }
 
 }

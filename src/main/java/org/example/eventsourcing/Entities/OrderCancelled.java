@@ -12,10 +12,12 @@ import java.util.UUID;
 public class OrderCancelled extends Event {
 
     private UUID orderId;
+    private String company;
     private String userId;
 
-    public OrderCancelled(UUID orderId, String userId) {
+    public OrderCancelled(UUID orderId,String company, String userId) {
         super(EventType.OrderCancelled);
+        this.company = company;
         this.orderId = orderId;
         this.userId = userId;
     }
