@@ -12,5 +12,6 @@ import java.util.List;
 public class TagPathNameDTO {
     private String path;
     private String filename;
+    private String extension;
     private List<Tag> tags;
 }

@@ -48,7 +48,7 @@ public class MetadataService {
         kafkaTemplate.send(TOPIC, message);
     }
 
-    public MetadataDTO getMetadataForFile(String path, String filename){
+    public MetadataDTO getMetadataForFile(String path, String filename,String extension){
 
         sendMessage(new LoggerMessage(
                 Timestamp.valueOf(LocalDateTime.now()),
@@ -60,12 +60,12 @@ public class MetadataService {
                 )
         ));
 
-        return metadataConvertor.convert(metadataRepository.getMetadataForFile(path, filename));
+        return metadataConvertor.convert(metadataRepository.getMetadataForFile(path, filename,extension));
     }
 
     @Transactional
-    public String modifyMetadataForFile(String path,String filename, List<MetadataEntries> entries) {
-        Metadata metadata = metadataRepository.getMetadataForFile(path, filename);
+    public String modifyMetadataForFile(String path,String filename,String extension, List<MetadataEntries> entries) {
+        Metadata metadata = metadataRepository.getMetadataForFile(path, filename,extension);
         boolean success = true;
         if(metadata == null){
             success = false;
@@ -98,8 +98,8 @@ public class MetadataService {
     }
 
     @Transactional
-    public String addMetadataForFile(String path, String filename, List<MetadataEntries> entry) {
-        Metadata metadata = metadataRepository.getMetadataForFile(path,filename);
+    public String addMetadataForFile(String path, String filename,String extension, List<MetadataEntries> entry) {
+        Metadata metadata = metadataRepository.getMetadataForFile(path,filename,extension);
         Map<String, String> entries = entry.stream()
                 .collect(Collectors.toMap(MetadataEntries::getKey, MetadataEntries::getValue));
 
@@ -154,7 +154,7 @@ public class MetadataService {
                     .map(entry -> new MetadataEntries(entry.getKey(), (String) entry.getValue()))
                     .toList();
 
-            String partialResult = addMetadataForFile(dto.getPath(), dto.getFilename(), entries);
+            String partialResult = addMetadataForFile(dto.getPath(), dto.getFilename(),dto.getExtension(), entries);
 
             if (partialResult == null) {
                 throw new RuntimeException("Failed to add metadata for file: "
@@ -167,8 +167,8 @@ public class MetadataService {
     }
 
     @Transactional
-    public String deleteMetadataForFile(String path,String filename,List<KeyDTO> keys){
-        Metadata metadata = metadataRepository.getMetadataForFile(path, filename);
+    public String deleteMetadataForFile(String path,String filename,String extension,List<KeyDTO> keys){
+        Metadata metadata = metadataRepository.getMetadataForFile(path, filename,extension);
         boolean success = true;
         if(metadata == null){
             success = false;

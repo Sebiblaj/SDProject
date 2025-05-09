@@ -84,8 +84,8 @@ public class FileService {
        return returnedFileList;
     }
 
-    public ReturnedFileDTO getFile(String fileName,String filePath){
-        File file = fileRepository.getFileByPathAndFilename(filePath, fileName);
+    public ReturnedFileDTO getFile(String fileName,String filePath,String extension){
+        File file = fileRepository.getFileByPathAndFilenameAndExtension(filePath, fileName,extension);
 
         sendMessage(new LoggerMessage(
                 Timestamp.valueOf(LocalDateTime.now()),
@@ -103,6 +103,8 @@ public class FileService {
     public String addFile(Object payload) {
         if (payload instanceof List<?>) {
             boolean success=true;
+
+            System.out.println("here");
             List<FileDTO> fileDTOs = objectMapper.convertValue(payload, new TypeReference<>() {});
 
             List<String> filenames = fileDTOs.stream().map(FileDTO::getFilename).toList();
@@ -111,7 +113,7 @@ public class FileService {
             List<File> existingFiles = fileRepository.findFilesByPathAndFilename(paths, filenames);
 
             Set<String> existingFileKeys = existingFiles.stream()
-                    .map(file -> file.getPath() + "|" + file.getFilename())
+                    .map(file -> file.getPath() + "|" + file.getFilename() + "|" + file.getType().getType())
                     .collect(Collectors.toSet());
 
             Map<String, FileType> fileTypeMap = fileTypeRepository.findAll().stream()
@@ -120,7 +122,7 @@ public class FileService {
             List<File> newFiles = new ArrayList<>();
 
             for (FileDTO fileDTO : fileDTOs) {
-                String key = fileDTO.getPath() + "|" + fileDTO.getFilename();
+                String key = fileDTO.getPath() + "|" + fileDTO.getFilename() + "|" + fileDTO.getType();
                 if (existingFileKeys.contains(key)) {
                     continue;
                 }
@@ -166,7 +168,7 @@ public class FileService {
             FileDTO fileDTO = objectMapper.convertValue(payload, FileDTO.class);
             File newFile = fileDTOConverter.convert(fileDTO);
 
-            System.out.println("Adding file " + newFile);
+            System.out.println("Adding " + newFile);
             fileRepository.save(newFile);
 
             sendMessage(new LoggerMessage(
@@ -186,8 +188,8 @@ public class FileService {
     }
 
     @Transactional
-    public String updateFile(String path,String filename, List<MetadataEntries> request) {
-        File oldFile = fileRepository.getFileByPathAndFilename(path, filename);
+    public String updateFile(String path,String filename,String extension, List<MetadataEntries> request) {
+        File oldFile = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
         boolean success = true;
         if (oldFile == null) {
             success = false;
@@ -327,8 +329,9 @@ public class FileService {
         int size = files.size();
         List<String> names = files.stream().map(File::getFilename).toList();
         List<String> paths = files.stream().map(File::getPath).toList();
+        List<String> extensions = files.stream().map(File::getType).map(FileType::getType).toList();
         for(int i = 0 ; i< names.size() ; i++){
-            deleteAllTagsForFile(paths.get(i), names.get(i));
+            deleteAllTagsForFile(paths.get(i), names.get(i),extensions.get(i));
 
         }
         fileRepository.deleteAll();
@@ -447,8 +450,8 @@ public class FileService {
     }
 
     @Transactional
-    public String addTagsToFile(String path, String filename, List<Tag> tags) {
-        File oldFile = fileRepository.getFileByPathAndFilename(path, filename);  // Find the file
+    public String addTagsToFile(String path, String filename,String extension, List<Tag> tags) {
+        File oldFile = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
         boolean success = true;
 
         if (oldFile == null) {
@@ -497,7 +500,7 @@ public class FileService {
     @Transactional
     public String addMultipleTags(List<TagPathNameDTO> tagPathNameDTO) {
         for(TagPathNameDTO dto : tagPathNameDTO) {
-            String partialResult = addTagsToFile(dto.getPath(), dto.getFilename(), dto.getTags());
+            String partialResult = addTagsToFile(dto.getPath(), dto.getFilename(),dto.getExtension(), dto.getTags());
 
             if (partialResult == null) {
                 throw new RuntimeException("Failed to add tags for file: "
@@ -509,8 +512,8 @@ public class FileService {
     }
 
     @Transactional
-    public String deleteTagsForFile(String path, String filename, List<Tag> tags) {
-        File oldFile = fileRepository.getFileByPathAndFilename(path, filename);
+    public String deleteTagsForFile(String path, String filename,String extension, List<Tag> tags) {
+        File oldFile = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
         boolean success = true;
         if (oldFile != null) {
             Set<FileTag> fileTags = oldFile.getTags();
@@ -552,8 +555,8 @@ public class FileService {
     }
 
     @Transactional
-    public String deleteAllTagsForFile(String path, String filename) {
-        File oldFile = fileRepository.getFileByPathAndFilename(path, filename);
+    public String deleteAllTagsForFile(String path, String filename,String extension) {
+        File oldFile = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
         String description;
         boolean succeeded = false;
         if (oldFile != null) {

@@ -29,7 +29,9 @@ public interface FileRepository extends JpaRepository<File, String> {
             "ORDER BY CAST(m.values['weight'] AS float) DESC")
     List<File> findAllFiles();
 
-    File getFileByPathAndFilename(String path, String filename);
+    @Query("SELECT f FROM File f JOIN FileType ft ON f.type.id = ft.id WHERE " +
+            "f.filename = :filename AND f.path = :path AND ft.type = :ext")
+    File getFileByPathAndFilenameAndExtension(@Param("path") String path,@Param("filename") String filename,@Param("ext") String ext);
 
     @Query("SELECT f FROM File f " +
             "JOIN Metadata m ON f.id = m.file.id " +
@@ -57,15 +59,6 @@ public interface FileRepository extends JpaRepository<File, String> {
     List<FileTag> findTagsForFile(@Param("path") String path, @Param("filename") String filename);
 
     @Query("SELECT f FROM File f " +
-            "JOIN f.tags t " +
-            "JOIN Metadata m ON f.id = m.file.id " +
-            "WHERE t.tag = :tag " +
-            "AND KEY(m.values) = 'weight' " +
-            "ORDER BY CAST(m.values['weight'] AS float) DESC")
-    List<File> findFilesForTag(@Param("tag") String tag);
-
-
-    @Query("SELECT f FROM File f " +
             "JOIN Metadata m ON f.id = m.file.id " +
             "WHERE f.path = :path AND f.filename = :filename " +
             "AND KEY(m.values) = 'weight' " +
@@ -74,11 +67,21 @@ public interface FileRepository extends JpaRepository<File, String> {
 
     @Query("SELECT f FROM File f " +
             "JOIN Metadata m ON f.id = m.file.id " +
-            "WHERE f.path IN :paths AND f.filename IN :filenames " +
+            "WHERE f.path IN :path AND f.filename IN :filename " +
             "AND KEY(m.values) = 'weight' " +
             "ORDER BY CAST(m.values['weight'] AS float) DESC")
-    List<File> findFilesByPathAndFilename(@Param("paths") List<String> paths, @Param("filenames") List<String> filenames);
+    List<File> findFilesByPathAndFilename(@Param("path") List<String> path, @Param("filename") List<String> filename);
 
+    @Query("SELECT f FROM File f " +
+            "JOIN Metadata m ON f.id = m.file.id " +
+            "JOIN FileType ft ON f.type.id = ft.id " +
+            "WHERE f.path IN :paths AND f.filename IN :filenames AND ft.type IN :ext " +
+            "AND KEY(m.values) = 'weight' " +
+            "ORDER BY CAST(m.values['weight'] AS float) DESC")
+    List<File> findFilesByPathAndFilenameAndExtension(
+            @Param("paths") List<String> paths,
+            @Param("filenames") List<String> filenames,
+            @Param("ext") List<String> ext);
     List<File> findFilesByTags(Set<FileTag> tags);
 }
 

@@ -3,10 +3,12 @@ package com.example.localsearchengine.Services;
 import com.example.localsearchengine.DTOs.ContentDTOS.ContentsDTO;
 import com.example.localsearchengine.DTOs.ContentDTOS.FileContentDTO;
 import com.example.localsearchengine.DTOs.ContentDTOS.FileSearchResult;
+import com.example.localsearchengine.DTOs.FileSearchCriteria;
 import com.example.localsearchengine.DTOs.LoggerMessage;
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataEntries;
 import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.Entites.FileContents;
+import com.example.localsearchengine.KeywordSearch.FileContentsSpecification;
 import com.example.localsearchengine.Persistence.FileContentsRepository;
 import com.example.localsearchengine.Persistence.FileRepository;
 import jakarta.transaction.Transactional;
@@ -48,8 +50,10 @@ public class FileContentsService {
         kafkaTemplate.send(TOPIC, message);
     }
 
-    public String getFileContents(String path, String filename) {
-        FileContents fileContents = fileContentsRepository.getFileContentsByPathAndFilename(path, filename);
+    public String getFileContents(String path, String filename,String extension) {
+
+        System.out.println("The path is " + path + " and the filename is " + filename + " and the extension is " + extension);
+        FileContents fileContents = fileContentsRepository.getFileContentsByPathAndFilename(path, filename,extension);
 
         sendMessage(new LoggerMessage(
                 Timestamp.valueOf(LocalDateTime.now()),
@@ -62,13 +66,13 @@ public class FileContentsService {
         ));
         long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
         MetadataEntries metadataEntries = new MetadataEntries("lastaccess", String.valueOf(timestamp));
-        metadataService.modifyMetadataForFile(path,filename,new ArrayList<>(List.of(metadataEntries)));
+        metadataService.modifyMetadataForFile(path,filename,extension,new ArrayList<>(List.of(metadataEntries)));
 
 
         return fileContents != null ? fileContents.getContents() : null;
     }
 
-    public String getPreview(String path, String filename) {
+    public String getPreview(String path, String filename,String extension) {
 
         sendMessage(new LoggerMessage(
                 Timestamp.valueOf(LocalDateTime.now()),
@@ -82,130 +86,103 @@ public class FileContentsService {
 
         long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
         MetadataEntries metadataEntries = new MetadataEntries("lastaccess", String.valueOf(timestamp));
-        metadataService.modifyMetadataForFile(path,filename,new ArrayList<>(List.of(metadataEntries)));
+        metadataService.modifyMetadataForFile(path,filename,extension,new ArrayList<>(List.of(metadataEntries)));
 
-        return fileContentsRepository.getFileContentsByPathAndFilename(path, filename).getPreview();
+        return fileContentsRepository.getFileContentsByPathAndFilename(path, filename,extension).getPreview();
     }
 
-    public List<FileSearchResult> searchInFileByPathAndName(List<String> paths, List<String> filenames, List<String> keywords) {
-        List<FileSearchResult> results = new ArrayList<>();
-        boolean success = true;
+    public List<FileSearchResult> search(FileSearchCriteria criteria) {
+        List<FileContents> results = fileContentsRepository.findAll(FileContentsSpecification.withCriteria(criteria));
 
-        System.out.println("The paths are " + paths);
-        System.out.println("The filenames are " + filenames);
-        System.out.println("The keywords are " + keywords);
+        if (results.isEmpty()) {
+            return null;
+        }
 
-        List<String> searchPaths = (paths == null || paths.isEmpty()) ? null : paths;
-        List<String> searchFilenames = (filenames == null || filenames.isEmpty()) ? null : filenames;
+        return results.stream().map(fileContent -> {
+            List<Integer> lineNumbers = new ArrayList<>();
+            List<String> excerpts = new ArrayList<>();
 
-        if (keywords == null || keywords.isEmpty()) {
-            success = false;
-        } else {
-            String tsQueryString = String.join(" & ", keywords);
-            List<FileContents> matchedFiles = new ArrayList<>();
-
-            if (searchPaths == null && searchFilenames == null) {
-                matchedFiles = fileContentsRepository.searchFileByKeyword(tsQueryString);
-            } else if (searchPaths != null && searchFilenames == null) {
-                for (String path : searchPaths) {
-                    matchedFiles.addAll(fileContentsRepository.getFileContentsByPath(path, tsQueryString));
-                }
-            } else if (searchPaths == null) {
-                for (String filename : searchFilenames) {
-                    matchedFiles.addAll(fileContentsRepository.getFileContentsByName(filename, tsQueryString));
-                }
-            } else {
-                for (String path : searchPaths) {
-                    for (String filename : searchFilenames) {
-                        matchedFiles.addAll(fileContentsRepository.searchFileByKeyword(path, filename, tsQueryString));
+            List<String> lines = fileContent.getContents().lines().toList();
+            for (int i = 0; i < lines.size(); i++) {
+                for (String keyword : criteria.getKeywords()) {
+                    if (lines.get(i).toLowerCase().contains(keyword.toLowerCase())) {
+                        lineNumbers.add(i + 1);
+                        excerpts.add(lines.get(i));
                     }
                 }
             }
 
-            if (matchedFiles.isEmpty()) {
-                success = false;
-            } else {
-                for (FileContents fileContent : matchedFiles) {
+            File file = fileContent.getFile();
+            String filename = file.getFilename();
+            String path = file.getPath();
+            String extension = file.getType().getType();
 
-                    String finalFilename = fileContent.getFile().getFilename();
-                    String finalPath = fileContent.getFile().getPath();
+            long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            metadataService.modifyMetadataForFile(path, filename, extension,
+                    List.of(new MetadataEntries("lastaccess", String.valueOf(timestamp))));
 
-                    List<Integer> lineNumbers = new ArrayList<>();
-                    List<String> excerpts = new ArrayList<>();
-
-                    List<String> lines = fileContent.getContents().lines().toList();
-                    for (int i = 0; i < lines.size(); i++) {
-                        String line = lines.get(i);
-                        for (String keyword : keywords) {
-                            if (line.toLowerCase().contains(keyword.toLowerCase())) {
-                                lineNumbers.add(i + 1);
-                                excerpts.add(line);
-                            }
-                        }
-                    }
-
-                    if (!lineNumbers.isEmpty()) {
-                        results.add(new FileSearchResult(finalFilename, finalPath, lineNumbers, excerpts));
-                    }
-
-                    long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-                    MetadataEntries metadataEntries = new MetadataEntries("lastaccess", String.valueOf(timestamp));
-                    metadataService.modifyMetadataForFile(finalPath,finalFilename,new ArrayList<>(List.of(metadataEntries)));
-                }
-            }
-        }
-
-        String description;
-        if (success) {
-            description = "User has accessed the file(s) to search in contents for keyword(s) '" +
-                    String.join(", ", keywords) + "'.";
-        } else {
-            description = "User has tried to access file(s) to search in contents but failed";
-        }
-
-        sendMessage(new LoggerMessage(
-                Timestamp.valueOf(LocalDateTime.now()),
-                "sebir",
-                new LoggerMessage.ActivityDetails(
-                        1,
-                        List.of(
-                                String.join(",", results.stream().map(FileSearchResult::getPath).toList()) + "/" +
-                                        (String.join(",", results.stream().map(FileSearchResult::getFilename).toList()))
-                        ),
-                        description
-                )
-        ));
-
-        return results.isEmpty() ? null : results;
+            return new FileSearchResult(filename, path, lineNumbers, excerpts);
+        }).toList();
     }
 
     @Transactional
     public String setFileContents(List<FileContentDTO> fileFullContents) {
-        Map<String, File> fileMap = fileRepository.findFilesByPathAndFilename(
-                fileFullContents.stream().map(FileContentDTO::getPath).collect(Collectors.toList()),
-                fileFullContents.stream().map(FileContentDTO::getFilename).collect(Collectors.toList())
-        ).stream().collect(Collectors.toMap(file -> file.getPath() + file.getFilename(), file -> file));
+        List<String> paths = fileFullContents.stream()
+                .map(FileContentDTO::getPath)
+                .collect(Collectors.toList());
+
+        List<String> filenames = fileFullContents.stream()
+                .map(FileContentDTO::getFilename)
+                .collect(Collectors.toList());
+
+        List<String> extensions = fileFullContents.stream()
+                .map(FileContentDTO::getExtension)
+                .collect(Collectors.toList());
+
+        List<File> files = fileRepository.findFilesByPathAndFilenameAndExtension(paths, filenames, extensions);
+
+        Map<String, File> fileMap = files.stream().collect(Collectors.toMap(
+                file -> file.getPath() + file.getFilename() + file.getType().getType(),
+                file -> file
+        ));
 
         List<FileContents> fileContentsList = new ArrayList<>();
+
         for (FileContentDTO fileDTO : fileFullContents) {
-            File file = fileMap.get(fileDTO.getPath() + fileDTO.getFilename());
+            String key = fileDTO.getPath() + fileDTO.getFilename() + fileDTO.getExtension();
+            File file = fileMap.get(key);
             if (file != null) {
                 FileContents fileContents = fileContentsRepository.findByFile(file);
+                String cleanContent;
                 if (fileContents != null) {
-                    fileContents.setContents(fileDTO.getContent());
+                    cleanContent = fileDTO.getContent().replace("\u0000", "");
+                    fileContents.setContents(cleanContent);
                 } else {
                     fileContents = new FileContents();
                     fileContents.setFile(file);
-                    fileContents.setContents(fileDTO.getContent());
+                    cleanContent = fileDTO.getContent().replace("\u0000", "");
+                    fileContents.setContents(cleanContent);
                 }
-                String preview = fileDTO.getContent().length() > 100 ? fileDTO.getContent().substring(0, 100) + "..." : fileDTO.getContent();
+
+                String preview = cleanContent.length() > 100 ? cleanContent.substring(0, 100) + "..." : cleanContent;
                 fileContents.setPreview(preview);
                 fileContentsList.add(fileContents);
 
-                long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-                MetadataEntries metadataEntries = new MetadataEntries("lastaccess", String.valueOf(timestamp));
-                MetadataEntries metadataEntries2 = new MetadataEntries("lastmodified",String.valueOf(timestamp));
-                metadataService.modifyMetadataForFile(fileDTO.getPath(),fileDTO.getFilename(),new ArrayList<>(List.of(metadataEntries, metadataEntries2)));
+                long timestamp = LocalDateTime.now()
+                        .atZone(ZoneId.systemDefault())
+                        .toInstant().toEpochMilli();
+                MetadataEntries lastAccess = new MetadataEntries("lastaccess", String.valueOf(timestamp));
+                MetadataEntries lastModified = new MetadataEntries("lastmodified", String.valueOf(timestamp));
+
+                File file1 = fileContents.getFile();
+                String extension1 = file1.getType().getType();
+
+                metadataService.modifyMetadataForFile(
+                        fileDTO.getPath(),
+                        fileDTO.getFilename(),
+                        extension1,
+                        new ArrayList<>(List.of(lastAccess, lastModified))
+                );
             }
         }
 
@@ -217,7 +194,8 @@ public class FileContentsService {
                 new LoggerMessage.ActivityDetails(
                         fileContentsList.size(),
                         fileContentsList.stream()
-                                .map(f-> f.getFile().getPath() + "/" + f.getFile().getFilename()).toList(),
+                                .map(f -> f.getFile().getPath() + "/" + f.getFile().getFilename())
+                                .toList(),
                         "User has set the contents for the files."
                 )
         ));
@@ -226,15 +204,15 @@ public class FileContentsService {
     }
 
     @Transactional
-    public String setFileContents(String path, String filename, ContentsDTO contentsDTO) {
-        FileContents fileContents = fileContentsRepository.getFileContentsByPathAndFilename(path, filename);
+    public String setFileContents(String path, String filename,String extension, ContentsDTO contentsDTO) {
+        FileContents fileContents = fileContentsRepository.getFileContentsByPathAndFilename(path, filename,extension);
         String description;
         boolean success = true;
         if (fileContents != null) {
             fileContents.setContents(contentsDTO.getContent());
             fileContentsRepository.save(fileContents);
         } else {
-            File file = fileRepository.getFileByPathAndFilename(path, filename);
+            File file = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
             if (file != null) {
                 FileContents newFileContents = new FileContents();
                 newFileContents.setFile(file);
@@ -256,7 +234,7 @@ public class FileContentsService {
             MetadataEntries metadataEntries2 = new MetadataEntries("lastmodified",String.valueOf(timestamp));
             entries.add(metadataEntries2);
         }
-        metadataService.modifyMetadataForFile(path,filename,entries);
+        metadataService.modifyMetadataForFile(path,filename,extension,entries);
 
         sendMessage(new LoggerMessage(
                 Timestamp.valueOf(LocalDateTime.now()),
@@ -271,8 +249,8 @@ public class FileContentsService {
     }
 
     @Transactional
-    public void deleteFileContents(String path, String filename) {
-        FileContents fileContents = fileContentsRepository.getFileContentsByPathAndFilename(path, filename);
+    public void deleteFileContents(String path, String filename,String extension) {
+        FileContents fileContents = fileContentsRepository.getFileContentsByPathAndFilename(path, filename,extension);
         if (fileContents != null) {
             fileContentsRepository.delete(fileContents);
         }
@@ -290,6 +268,6 @@ public class FileContentsService {
         long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
         MetadataEntries metadataEntries = new MetadataEntries("lastaccess", String.valueOf(timestamp));
         MetadataEntries metadataEntries2 = new MetadataEntries("lastmodified",String.valueOf(timestamp));
-        metadataService.modifyMetadataForFile(path,filename,new ArrayList<>(List.of(metadataEntries, metadataEntries2)));
+        metadataService.modifyMetadataForFile(path,filename,extension,new ArrayList<>(List.of(metadataEntries, metadataEntries2)));
     }
 }

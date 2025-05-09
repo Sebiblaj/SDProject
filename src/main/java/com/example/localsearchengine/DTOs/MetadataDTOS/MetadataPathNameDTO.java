@@ -10,5 +10,6 @@ import lombok.NoArgsConstructor;
 public class MetadataPathNameDTO {
     private String path;
     private String filename;
+    private String extension;
     private MetadataDTO metadataDTO;
 }

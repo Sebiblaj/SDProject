@@ -13,7 +13,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"filename", "path"}))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"filename", "path","type_id"}))
 public class File {
 
     @Id

@@ -20,8 +20,9 @@ public class MetadataController {
 
     @GetMapping(value = "")
     public ResponseEntity<MetadataDTO> getMetadataForFile(@RequestParam String filePath,
-                                                          @RequestParam String fileName) {
-        MetadataDTO metadata = metadataService.getMetadataForFile(filePath, fileName);
+                                                          @RequestParam String fileName,
+                                                          @RequestParam String extension) {
+        MetadataDTO metadata = metadataService.getMetadataForFile(filePath, fileName,extension);
         return metadata != null ? ResponseEntity.ok(metadata) : ResponseEntity.notFound().build();
     }
 
@@ -29,15 +30,17 @@ public class MetadataController {
     @PutMapping(value = "modify")
     public ResponseEntity<String> updateMetadataForFile(@RequestParam String filePath,
                                                         @RequestParam String fileName,
+                                                        @RequestParam String extension,
                                                         @RequestBody List<MetadataEntries> entries) {
-        return metadataService.modifyMetadataForFile(filePath,fileName,entries) != null ? ResponseEntity.ok("Metadata updated successfully") : ResponseEntity.notFound().build();
+        return metadataService.modifyMetadataForFile(filePath,fileName,extension,entries) != null ? ResponseEntity.ok("Metadata updated successfully") : ResponseEntity.notFound().build();
     }
 
-    @PostMapping(value = "add",params = {"filePath","fileName"})
+    @PostMapping(value = "add",params = {"filePath","fileName","extension"})
     public ResponseEntity<String> addMetadataToFile(@RequestParam String filePath,
                                                     @RequestParam String fileName,
+                                                    @RequestParam String extension,
                                                     @RequestBody List<MetadataEntries> entries){
-        return metadataService.addMetadataForFile(filePath,fileName,entries) != null ? ResponseEntity.ok("Metadata added successfully") : ResponseEntity.notFound().build();
+        return metadataService.addMetadataForFile(filePath,fileName,extension,entries) != null ? ResponseEntity.ok("Metadata added successfully") : ResponseEntity.notFound().build();
     }
 
     @PostMapping(value = "add")
@@ -45,10 +48,11 @@ public class MetadataController {
         return metadataService.addMultipleMetadata(metadataPathNameDTOS) != null ? ResponseEntity.ok("Metadata added successfully") : ResponseEntity.ok("Could not add metadata");
     }
 
-    @DeleteMapping(value = "delete",params = {"filePath","fileName"})
+    @DeleteMapping(value = "delete",params = {"filePath","fileName","extension"})
     public ResponseEntity<String> deleteMetadataForFile(@RequestParam String filePath,
                                                         @RequestParam String fileName,
+                                                        @RequestParam String extension,
                                                         @RequestBody List<KeyDTO> keys){
-        return metadataService.deleteMetadataForFile(filePath,fileName, keys) != null ? ResponseEntity.ok("Metadata deleted successfully") : ResponseEntity.notFound().build();
+        return metadataService.deleteMetadataForFile(filePath,fileName,extension, keys) != null ? ResponseEntity.ok("Metadata deleted successfully") : ResponseEntity.notFound().build();
     }
 }

@@ -32,9 +32,8 @@ public class FileController {
     }
 
     @GetMapping(value = "search", params = {"fileName", "filePath"})
-    public ResponseEntity<ReturnedFileDTO> getFileById(@RequestParam String filePath,
-                                            @RequestParam String fileName) {
-        ReturnedFileDTO file = fileService.getFile(fileName, filePath);
+    public ResponseEntity<ReturnedFileDTO> getFileById(@RequestParam String filePath, @RequestParam String fileName,@RequestParam String extension) {
+        ReturnedFileDTO file = fileService.getFile(fileName, filePath,extension);
         return file != null ? ResponseEntity.ok(file) : ResponseEntity.notFound().build();
     }
 
@@ -70,8 +69,9 @@ public class FileController {
     @PutMapping("update")
     public ResponseEntity<String> updateFilename(@RequestParam String filePath,
                                                @RequestParam String fileName,
+                                               @RequestParam String extension,
                                                @RequestBody List<MetadataEntries> request) {
-        String result = fileService.updateFile(filePath,fileName, request);
+        String result = fileService.updateFile(filePath,fileName,extension, request);
         return !result.equals("File not found") ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
     }
 
@@ -115,8 +115,9 @@ The next part is for the Tags of the file
     @PostMapping(value = "tags/add" , params = {"filePath","fileName"})
     public ResponseEntity<String> addTagsToFile(@RequestParam String filePath,
                                                 @RequestParam String fileName,
+                                                @RequestParam String extension,
                                                 @RequestBody List<Tag> tags) {
-        return fileService.addTagsToFile(filePath,fileName, tags) != null ? ResponseEntity.ok("Tags added successfully") : ResponseEntity.notFound().build();
+        return fileService.addTagsToFile(filePath,fileName,extension, tags) != null ? ResponseEntity.ok("Tags added successfully") : ResponseEntity.notFound().build();
     }
 
     @PostMapping(value = "tags/add")
@@ -127,14 +128,16 @@ The next part is for the Tags of the file
     @DeleteMapping(value = "tags/delete",params = {"filePath,fileName"})
     public ResponseEntity<String> removeTagsFromFile(@RequestParam String filePath,
                                                      @RequestParam String fileName,
+                                                     @RequestParam String extension,
                                                      @RequestBody List<Tag> tags){
-        return fileService.deleteTagsForFile(filePath,fileName,tags) != null ? ResponseEntity.ok("Tags deleted successfully") : ResponseEntity.notFound().build();
+        return fileService.deleteTagsForFile(filePath,fileName,extension,tags) != null ? ResponseEntity.ok("Tags deleted successfully") : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping(value = "tags/delete",params = {"filePath","fileName"})
     public ResponseEntity<String> removeAllTagsFromFile(@RequestParam String filePath,
-                                                        @RequestParam String fileName){
-        return fileService.deleteAllTagsForFile(filePath,fileName) != null ? ResponseEntity.ok("Tags deleted successfully") : ResponseEntity.notFound().build();
+                                                        @RequestParam String fileName,
+                                                        @RequestParam String extension){
+        return fileService.deleteAllTagsForFile(filePath,fileName,extension) != null ? ResponseEntity.ok("Tags deleted successfully") : ResponseEntity.notFound().build();
     }
 
 }
