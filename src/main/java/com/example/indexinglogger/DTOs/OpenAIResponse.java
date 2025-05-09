@@ -4,14 +4,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class FileContentDTO {
+public class OpenAIResponse {
 
-    private String path;
     private String filename;
+    private String filepath;
     private String extension;
-    private String content;
-
+    private List<String> tags;
 }

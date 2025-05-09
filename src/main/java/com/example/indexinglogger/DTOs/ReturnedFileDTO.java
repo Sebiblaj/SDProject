@@ -4,14 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class FileContentDTO {
+@Data
+public class ReturnedFileDTO {
 
-    private String path;
     private String filename;
+    private String path;
     private String extension;
-    private String content;
-
 }

@@ -5,10 +5,10 @@ import com.example.indexinglogger.Executors.FileProcessors.FileEntitiesProcessor
 import com.example.indexinglogger.Executors.HTTPProcessors.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,13 +37,13 @@ public class IndexingService {
     private HttpPostContentsHandler httpPostContentsHandler;
 
     @Autowired
-    private HttpPostMetadataHandler httpPostMetadataHandler;
-
-    @Autowired
     private HttpGetTagsFromOpenAI httpGetTagsFromOpenAI;
 
     @Autowired
-    private HttpPostTagsHandler httpPostTagsHandler;
+    private HttpGetAllFilesHandler httpGetAllFilesHandler;
+
+    @Value("${kafka.topic.indexing}")
+    private String TOPIC;
 
     @Value("${request.types.getAllTypesWithoutId}")
     private String getTypesWithoutIdPath;
@@ -57,35 +57,57 @@ public class IndexingService {
     @Value("${request.openai.getTagsFromContent}")
     private String tagsFromContentPath;
 
-    @Value("${request.metadata.postMetadata}")
-    private String postMetadataPath;
+    @Value("${request.file.getAllFile}")
+    private String getAllFilesPath;
 
-    @Value("${request.tags.postTags}")
-    private String postTagsPath;
+    private final List<String> imageExtensions = List.of("jpg","jpeg","png","gif","bmp");
+
+    @Autowired
+    private KafkaTemplate<String, Object> kafkaTemplate;
+
+    @Autowired
+    public void KafkaProducer(KafkaTemplate<String, Object> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+
+    public void sendMessage(Object message) {
+        kafkaTemplate.send(TOPIC, message);
+    }
 
     public String scanAndSendFiles(PathDTO startDir) throws IOException {
 
         boolean success = true;
 
         List<FileTypeDTO> fileTypes = httpGetTypesHandler.processList(getTypesWithoutIdPath);
+        List<ReturnedFileDTO> indexedFiles = httpGetAllFilesHandler.processList(getAllFilesPath);
 
-        if(fileTypes != null && !fileTypes.isEmpty()){
+        if (fileTypes == null || fileTypes.isEmpty()) {
+            return "Could not get file types.";
+        }
 
-            List<FileDTO> fileDTOS = new ArrayList<>();
-            List<FileContentDTO> fileContentDTOS = new ArrayList<>();
+        List<FileDTO> fileDTOS = new ArrayList<>();
+        List<FileFullContents> files = fileEntitiesProcessor.process(startDir.getPath(), fileTypes, indexedFiles);
 
-            List<FileFullContents> files = fileEntitiesProcessor.process(startDir.getPath(), fileTypes);
+        List<FileContentDTO> fileContents = files.stream()
+                .map(FileFullContents::getContents)
+                .collect(Collectors.toList());
 
-            System.out.println("File processed successfully");
+        List<FileContentDTO> fileContentDTOS = fileContents.stream().filter(f -> !imageExtensions.contains(f.getExtension().toLowerCase())).toList();
 
-            for(FileFullContents fileFullContents:files){
-                FileDTO fileDTO = fileFullContents.getFile();
-                fileContentDTOS.add(fileFullContents.getContents());
+        List<OpenAIResponse> openAIResponses = httpGetTagsFromOpenAI.processList(tagsFromContentPath, fileContentDTOS);
 
-                String tagsString = httpGetTagsFromOpenAI.processList(tagsFromContentPath,fileFullContents.getContents()).getFirst();
-                System.out.println("Tags processed successfully");
+        System.out.println("The response is: "+ openAIResponses.toString());
+        for (FileFullContents fileFullContents : files) {
+            FileDTO fileDTO = fileFullContents.getFile();
 
-                if (tagsString != null && !tagsString.isBlank()) {
+            if (!imageExtensions.contains(fileDTO.getType().toLowerCase())) {
+                String tagsString = openAIResponses.stream()
+                        .filter(response -> response.getFilename().equals(fileDTO.getFilename()))
+                        .map(OpenAIResponse::getTags)
+                        .flatMap(List::stream)
+                        .collect(Collectors.joining(","));
+
+                if (!tagsString.isBlank()) {
                     List<Tag> tags = Arrays.stream(tagsString.split(","))
                             .map(String::trim)
                             .filter(s -> !s.isEmpty())
@@ -93,21 +115,24 @@ public class IndexingService {
                             .toList();
                     fileDTO.setTags(tags.stream().map(Tag::getTag).collect(Collectors.toList()));
                 }
-                fileDTOS.add(fileFullContents.getFile());
+            } else {
+                fileDTO.setTags(List.of("image"));
             }
 
-            String result =  httpPostFilesHandler.process(postAllFilesPath,fileDTOS);
-            System.out.println(result);
-            String result2 = httpPostContentsHandler.process(postMultipleContentPath, fileContentDTOS);
-            System.out.println(result2);
-
-
-          if(result.equals("Could not add files") || result2.equals("Could not load contents")){
-               success = false;
-          }
+            fileDTOS.add(fileDTO);
+            sendMessage(fileDTO);
         }
 
-        return success ? addFileFail : addFileSuccess;
+        String result = httpPostFilesHandler.process(postAllFilesPath, fileDTOS);
+        String result2 = httpPostContentsHandler.process(postMultipleContentPath, fileContents);
+
+        if ("Could not add files".equals(result) || "Could not load contents".equals(result2)) {
+            System.out.println(result2);
+            System.out.println(result);
+            success = false;
+        }
+
+        return success ? addFileSuccess : addFileFail;
     }
 
 }
