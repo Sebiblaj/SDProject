@@ -10,5 +10,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OpenAIResponse {
-    private List<Choice> choices;
+    private String filename;
+    private String filepath;
+    private String extension;
+    private List<String> tags;
 }
