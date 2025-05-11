@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <style>
+        .widget.weather {
+            font-family: 'Segoe UI', sans-serif;
+            background: #cce5ff;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 300px;
+        }
+
+        .widget.weather h3 {
+            color: #004085;
+        }
+
+        .widget.weather p {
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+
+<div th:fragment="weatherWidget">
+    <div class="widget weather">
+        <h3>🌤️ Weather</h3>
+        <p class="icon">☀️</p>
+        <p>23°C - Sunny</p>
+        <p>City: Cluj Napoca</p>
+    </div>
+</div>
+
+</body>
+</html>

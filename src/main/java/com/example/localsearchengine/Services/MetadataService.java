@@ -13,6 +13,9 @@ import com.example.localsearchengine.ServiceExecutors.Convertors.MetadataConvert
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +29,9 @@ public class MetadataService {
 
     @Autowired
     private KafkaTemplate<String, Object> kafkaTemplate;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     @Autowired
     private MetadataRepository metadataRepository;
@@ -48,6 +54,7 @@ public class MetadataService {
         kafkaTemplate.send(TOPIC, message);
     }
 
+    @Cacheable(value = "metadata", key = "{#path, #filename, #extension}")
     public MetadataDTO getMetadataForFile(String path, String filename,String extension){
 
         sendMessage(new LoggerMessage(
@@ -74,6 +81,10 @@ public class MetadataService {
                 if (metadata.getValues().containsKey(entry.getKey())) {
                     metadata.getValues().replace(entry.getKey(), entry.getValue());
                 }
+            }
+            Cache cache = cacheManager.getCache("metadata");
+            if (cache != null && cache.get(path + filename + extension) != null) {
+                cache.evict(path + filename + extension);
             }
             metadataRepository.save(metadata);
         }
@@ -102,6 +113,11 @@ public class MetadataService {
         Metadata metadata = metadataRepository.getMetadataForFile(path,filename,extension);
         Map<String, String> entries = entry.stream()
                 .collect(Collectors.toMap(MetadataEntries::getKey, MetadataEntries::getValue));
+
+        Cache cache = cacheManager.getCache("metadata");
+        if (cache != null && cache.get(path + filename + extension) != null) {
+            cache.evict(path + filename + extension);
+        }
 
         boolean success = true;
         if (metadata == null) {
@@ -178,6 +194,12 @@ public class MetadataService {
             }
             metadataRepository.save(metadata);
         }
+
+        Cache cache = cacheManager.getCache("metadata");
+        if (cache != null && cache.get(path + filename + extension) != null) {
+            cache.evict(path + filename + extension);
+        }
+
         String description;
         if(success){
            description= "User deleted some metadata for the file: " + keys.stream().map(KeyDTO::getKey).toList();

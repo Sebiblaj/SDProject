@@ -11,4 +11,5 @@ public class PathAndName {
 
     private String path;
     private String name;
+    private String extension;
 }

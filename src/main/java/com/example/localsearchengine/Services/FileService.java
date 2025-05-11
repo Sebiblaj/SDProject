@@ -16,6 +16,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import com.example.localsearchengine.DTOs.LoggerMessage.ActivityDetails;
@@ -28,6 +31,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class FileService {
+
+    @Autowired
+    private CacheManager cacheManager;
 
     @Autowired
     private FileRepository fileRepository;
@@ -62,6 +68,7 @@ public class FileService {
         kafkaTemplate.send(TOPIC, message);
     }
 
+    @Cacheable("files")
     public List<ReturnedFileDTO> getFiles() {
 
         List<ReturnedFileDTO> returnedFileList = new ArrayList<>();
@@ -84,6 +91,7 @@ public class FileService {
        return returnedFileList;
     }
 
+    @Cacheable(value = "file", key = "{#filePath, #fileName, #extension}")
     public ReturnedFileDTO getFile(String fileName,String filePath,String extension){
         File file = fileRepository.getFileByPathAndFilenameAndExtension(filePath, fileName,extension);
 
@@ -101,10 +109,12 @@ public class FileService {
 
     @Transactional
     public String addFile(Object payload) {
+
+        Objects.requireNonNull(cacheManager.getCache("files")).clear();
+
         if (payload instanceof List<?>) {
             boolean success=true;
 
-            System.out.println("here");
             List<FileDTO> fileDTOs = objectMapper.convertValue(payload, new TypeReference<>() {});
 
             List<String> filenames = fileDTOs.stream().map(FileDTO::getFilename).toList();
@@ -125,6 +135,16 @@ public class FileService {
                 String key = fileDTO.getPath() + "|" + fileDTO.getFilename() + "|" + fileDTO.getType();
                 if (existingFileKeys.contains(key)) {
                     continue;
+                }
+
+                Cache cache1 = cacheManager.getCache("getFile");
+                if(cache1 != null && cache1.get(fileDTO.getFilename()) != null){
+                    cache1.evict(fileDTO.getFilename());
+                }
+
+                Cache cache2 = cacheManager.getCache("ext");
+                if(cache2 != null && cache2.get(fileDTO.getType()) != null){
+                    cache2.evict(fileDTO.getType());
                 }
 
                 File newFile = fileDTOConverter.convert(fileDTO);
@@ -168,7 +188,16 @@ public class FileService {
             FileDTO fileDTO = objectMapper.convertValue(payload, FileDTO.class);
             File newFile = fileDTOConverter.convert(fileDTO);
 
-            System.out.println("Adding " + newFile);
+            Cache cache1 = cacheManager.getCache("getFile");
+            if(cache1 != null && cache1.get(fileDTO.getFilename()) != null){
+                cache1.evict(fileDTO.getFilename());
+            }
+
+            Cache cache2 = cacheManager.getCache("ext");
+            if(cache2 != null && cache2.get(fileDTO.getType()) != null){
+                cache2.evict(fileDTO.getType());
+            }
+
             fileRepository.save(newFile);
 
             sendMessage(new LoggerMessage(
@@ -212,6 +241,18 @@ public class FileService {
             }
         }
 
+        evictCache(path,filename,extension);
+        Objects.requireNonNull(cacheManager.getCache("files")).clear();
+        Cache cache1 = cacheManager.getCache("getFile");
+        if(cache1 != null && cache1.get(filename) != null){
+            cache1.evict(filename);
+        }
+
+        Cache cache2 = cacheManager.getCache("ext");
+        if(cache2 != null && cache2.get(extension) != null){
+            cache2.evict(extension);
+        }
+
         String description;
         String filePath;
         String fileName;
@@ -238,17 +279,14 @@ public class FileService {
         return success ? "File updated successfully" : "File not found";
     }
 
-    @Transactional
+    @Cacheable(value = "getFile",key = "#filename")
     public List<ReturnedFileDTO> searchFilesByName(String filename) {
-        System.out.println("Filename: " + filename);
+
         List<File> files = fileRepository.findAllByFilename(filename);
         List<ReturnedFileDTO> returnedFiles = new ArrayList<>();
         if ( files == null) {
-            System.out.println("empty");
             return returnedFiles; }
-        files.forEach(file -> {
-            returnedFiles.add(fileConvertor.convert(file));
-        });
+        files.forEach(file -> returnedFiles.add(fileConvertor.convert(file)));
 
         System.out.println("returned files: " + files);
         sendMessage(new LoggerMessage(
@@ -266,6 +304,7 @@ public class FileService {
         return returnedFiles;
     }
 
+    @Cacheable(value = "ext",key = "#ext")
     public List<ReturnedFileDTO> searchFilesByExtension(String ext) {
         List<File> files = fileRepository.findAllByExtension(ext);
         List<ReturnedFileDTO> returnedFiles = new ArrayList<>();
@@ -291,6 +330,21 @@ public class FileService {
     @Transactional
     public boolean deleteByPathAndFilename(List<PathAndName> files) {
         int deletedCount = fileRepository.deleteByPathAndFilename(files);
+
+        for(PathAndName pathAndName : files){
+            evictCache(pathAndName.getPath(),pathAndName.getName(),pathAndName.getExtension());
+            Objects.requireNonNull(cacheManager.getCache("files")).clear();
+            Cache cache1 = cacheManager.getCache("getFile");
+            if(cache1 != null && cache1.get(pathAndName.getName()) != null){
+                cache1.evict(pathAndName.getName());
+            }
+
+            Cache cache2 = cacheManager.getCache("ext");
+            if(cache2 != null && cache2.get(pathAndName.getExtension()) != null){
+                cache2.evict(pathAndName.getExtension());
+            }
+        }
+
         if (deletedCount != files.size()) {
 
             sendMessage(new LoggerMessage(
@@ -330,8 +384,20 @@ public class FileService {
         List<String> names = files.stream().map(File::getFilename).toList();
         List<String> paths = files.stream().map(File::getPath).toList();
         List<String> extensions = files.stream().map(File::getType).map(FileType::getType).toList();
+
         for(int i = 0 ; i< names.size() ; i++){
             deleteAllTagsForFile(paths.get(i), names.get(i),extensions.get(i));
+            evictCache(paths.get(i), names.get(i),extensions.get(i));
+            Objects.requireNonNull(cacheManager.getCache("files")).clear();
+            Cache cache1 = cacheManager.getCache("getFile");
+            if(cache1 != null && cache1.get(names.get(i)) != null){
+                cache1.evict(names.get(i));
+            }
+
+            Cache cache2 = cacheManager.getCache("ext");
+            if(cache2 != null && cache2.get(extensions.get(i)) != null){
+                cache2.evict(extensions.get(i));
+            }
 
         }
         fileRepository.deleteAll();
@@ -389,6 +455,7 @@ public class FileService {
     The following methods are for the tags
      */
 
+    @Cacheable(value = "tags",key = "#path+'/'+#filename")
     public List<Tag> getTagsForFile(String path, String filename) {
         List<FileTag> fileTags = fileRepository.findTagsForFile(path, filename);
         List<Tag> tags = new ArrayList<>();
@@ -409,6 +476,7 @@ public class FileService {
         return tags;
     }
 
+    @Cacheable("allTags")
     public Set<String> getAllTags() {
 
         sendMessage(new LoggerMessage(
@@ -424,6 +492,7 @@ public class FileService {
         return fileTagsRepository.findAll().stream().map(FileTag::getTag).collect(Collectors.toSet());
     }
 
+    @Cacheable(value = "filesByTag",key = "#tags")
     public List<ReturnedFileDTO> getFilesByTag(List<String> tags) {
         Set<File> uniqueFiles = new HashSet<>();
         for (String tag : tags) {
@@ -451,6 +520,17 @@ public class FileService {
 
     @Transactional
     public String addTagsToFile(String path, String filename,String extension, List<Tag> tags) {
+
+        Cache cache = cacheManager.getCache("tags");
+        if(cache != null && cache.get(path + "/" + filename) != null){
+            cache.evict(path + "/" + filename);
+        }
+        Objects.requireNonNull(cacheManager.getCache("allTags")).clear();
+        Cache cache1 = cacheManager.getCache("filesByTag");
+        if(cache1 != null && cache1.get(tags) != null){
+            cache1.evict(tags);
+        }
+
         File oldFile = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
         boolean success = true;
 
@@ -496,7 +576,6 @@ public class FileService {
         return success ? "Tags added successfully" : null;
     }
 
-
     @Transactional
     public String addMultipleTags(List<TagPathNameDTO> tagPathNameDTO) {
         for(TagPathNameDTO dto : tagPathNameDTO) {
@@ -513,6 +592,17 @@ public class FileService {
 
     @Transactional
     public String deleteTagsForFile(String path, String filename,String extension, List<Tag> tags) {
+
+        Cache cache = cacheManager.getCache("tags");
+        if(cache != null && cache.get(path + "/" + filename) != null){
+            cache.evict(path + "/" + filename);
+        }
+        Objects.requireNonNull(cacheManager.getCache("allTags")).clear();
+        Cache cache1 = cacheManager.getCache("filesByTag");
+        if(cache1 != null && cache1.get(tags) != null){
+            cache1.evict(tags);
+        }
+
         File oldFile = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
         boolean success = true;
         if (oldFile != null) {
@@ -556,6 +646,13 @@ public class FileService {
 
     @Transactional
     public String deleteAllTagsForFile(String path, String filename,String extension) {
+
+        Cache cache = cacheManager.getCache("tags");
+        if(cache != null && cache.get(path + "/" + filename) != null){
+            cache.evict(path + "/" + filename);
+        }
+        Objects.requireNonNull(cacheManager.getCache("allTags")).clear();
+
         File oldFile = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
         String description;
         boolean succeeded = false;
@@ -580,6 +677,17 @@ public class FileService {
         ));
 
         return succeeded ? "Tags deleted successfully" : null;
+    }
+
+    private void evictCache(String path, String filename, String extension){
+        Cache cacheContents = cacheManager.getCache("file");
+        if (cacheContents != null) {
+            cacheContents.evict(List.of(
+                    path,
+                    filename,
+                    extension
+            ));
+        }
     }
 
 }

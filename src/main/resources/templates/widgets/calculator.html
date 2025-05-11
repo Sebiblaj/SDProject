@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <style>
+        .widget.calculator {
+            font-family: 'Segoe UI', sans-serif;
+            background: #fefefe;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            max-width: 300px;
+        }
+
+        .widget.calculator h3 {
+            text-align: center;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .buttons button {
+            padding: 10px;
+            font-size: 1em;
+            border: none;
+            background: #ddd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div th:fragment="calculatorWidget">
+    <div class="widget calculator">
+        <h3>🧮 Calculator</h3>
+        <input type="text" readonly value="0" style="width: 100%; text-align: right; font-size: 1.2em; padding: 8px; margin-bottom: 10px;">
+        <div class="buttons">
+            <button>7</button><button>8</button><button>9</button><button>/</button>
+            <button>4</button><button>5</button><button>6</button><button>*</button>
+            <button>1</button><button>2</button><button>3</button><button>-</button>
+            <button>0</button><button>.</button><button>=</button><button>+</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

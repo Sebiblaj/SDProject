@@ -14,6 +14,10 @@ import com.example.localsearchengine.Persistence.FileRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -21,10 +25,13 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
 public class FileContentsService {
+
+    private final Set<FileSearchCriteria> cachedCriteria = ConcurrentHashMap.newKeySet();
 
     @Autowired
     private KafkaTemplate<String, Object> kafkaTemplate;
@@ -38,6 +45,9 @@ public class FileContentsService {
     @Autowired
     private MetadataService metadataService;
 
+    @Autowired
+    private CacheManager cacheManager;
+
     @Value("${kafka.topic.logs}")
     private String TOPIC;
 
@@ -50,9 +60,9 @@ public class FileContentsService {
         kafkaTemplate.send(TOPIC, message);
     }
 
+    @Cacheable(value = "fileContents", key = "{#path, #filename, #extension}")
     public String getFileContents(String path, String filename,String extension) {
 
-        System.out.println("The path is " + path + " and the filename is " + filename + " and the extension is " + extension);
         FileContents fileContents = fileContentsRepository.getFileContentsByPathAndFilename(path, filename,extension);
 
         sendMessage(new LoggerMessage(
@@ -72,6 +82,7 @@ public class FileContentsService {
         return fileContents != null ? fileContents.getContents() : null;
     }
 
+    @Cacheable(value = "fileContentsPreview", key = "{#path, #filename, #extension}")
     public String getPreview(String path, String filename,String extension) {
 
         sendMessage(new LoggerMessage(
@@ -91,7 +102,9 @@ public class FileContentsService {
         return fileContentsRepository.getFileContentsByPathAndFilename(path, filename,extension).getPreview();
     }
 
+    @Cacheable(value = "fileContentsKeywords", key = "#criteria")
     public List<FileSearchResult> search(FileSearchCriteria criteria) {
+        cachedCriteria.add(criteria);
         List<FileContents> results = fileContentsRepository.findAll(FileContentsSpecification.withCriteria(criteria));
 
         if (results.isEmpty()) {
@@ -150,17 +163,21 @@ public class FileContentsService {
 
         for (FileContentDTO fileDTO : fileFullContents) {
             String key = fileDTO.getPath() + fileDTO.getFilename() + fileDTO.getExtension();
+
+            evictCache("fileContents",fileDTO.getPath(),fileDTO.getFilename(),fileDTO.getExtension());
+            evictCache("fileContentsPreview",fileDTO.getPath(),fileDTO.getFilename(),fileDTO.getExtension());
+            evictByNameAndPath(List.of(fileDTO.getFilename()), List.of(fileDTO.getPath()));
+
             File file = fileMap.get(key);
             if (file != null) {
                 FileContents fileContents = fileContentsRepository.findByFile(file);
-                String cleanContent;
+                String cleanContent = fileDTO.getContent().replace("\u0000", "");
+
                 if (fileContents != null) {
-                    cleanContent = fileDTO.getContent().replace("\u0000", "");
                     fileContents.setContents(cleanContent);
                 } else {
                     fileContents = new FileContents();
                     fileContents.setFile(file);
-                    cleanContent = fileDTO.getContent().replace("\u0000", "");
                     fileContents.setContents(cleanContent);
                 }
 
@@ -171,17 +188,15 @@ public class FileContentsService {
                 long timestamp = LocalDateTime.now()
                         .atZone(ZoneId.systemDefault())
                         .toInstant().toEpochMilli();
+
                 MetadataEntries lastAccess = new MetadataEntries("lastaccess", String.valueOf(timestamp));
                 MetadataEntries lastModified = new MetadataEntries("lastmodified", String.valueOf(timestamp));
-
-                File file1 = fileContents.getFile();
-                String extension1 = file1.getType().getType();
 
                 metadataService.modifyMetadataForFile(
                         fileDTO.getPath(),
                         fileDTO.getFilename(),
-                        extension1,
-                        new ArrayList<>(List.of(lastAccess, lastModified))
+                        fileDTO.getExtension(),
+                        List.of(lastAccess, lastModified)
                 );
             }
         }
@@ -223,6 +238,10 @@ public class FileContentsService {
             }
         }
 
+        evictCache("fileContents",path,filename,extension);
+        evictCache("fileContentsPreview",path,filename,extension);
+        evictByNameAndPath(List.of(filename), List.of(path));
+
         long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
         MetadataEntries metadataEntries = new MetadataEntries("lastaccess", String.valueOf(timestamp));
         List<MetadataEntries> entries = new ArrayList<>();
@@ -255,6 +274,10 @@ public class FileContentsService {
             fileContentsRepository.delete(fileContents);
         }
 
+        evictCache("fileContents",path,filename,extension);
+        evictCache("fileContentsPreview",path,filename,extension);
+        evictByNameAndPath(List.of(filename), List.of(path));
+
         sendMessage(new LoggerMessage(
                 Timestamp.valueOf(LocalDateTime.now()),
                 "sebir",
@@ -269,5 +292,28 @@ public class FileContentsService {
         MetadataEntries metadataEntries = new MetadataEntries("lastaccess", String.valueOf(timestamp));
         MetadataEntries metadataEntries2 = new MetadataEntries("lastmodified",String.valueOf(timestamp));
         metadataService.modifyMetadataForFile(path,filename,extension,new ArrayList<>(List.of(metadataEntries, metadataEntries2)));
+    }
+
+    private void evictCache(String value,String path,String filename,String extension){
+        Cache cacheContents = cacheManager.getCache(value);
+        if (cacheContents != null) {
+            cacheContents.evict(List.of(
+                    path,
+                    filename,
+                    extension
+            ));
+        }
+    }
+
+    public void evictByNameAndPath(List<String> names, List<String> paths) {
+        Cache cache = cacheManager.getCache("fileContentsKeywords");
+        if (cache == null) return;
+
+        for (FileSearchCriteria criteria : cachedCriteria) {
+            if (criteria.getNames().equals(names) && criteria.getPaths().equals(paths)) {
+                cache.evict(criteria);
+            }
+        }
+        cachedCriteria.removeIf(c -> c.getNames().equals(names) && c.getPaths().equals(paths));
     }
 }

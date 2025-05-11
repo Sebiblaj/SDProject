@@ -6,6 +6,7 @@ import com.example.localsearchengine.ServiceExecutors.Convertors.MetadataConvert
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 
 @Configuration
 public class Configurations {
@@ -21,4 +22,5 @@ public class Configurations {
 
     @Bean
     public FileDTOConverter fileDTOConverter(){ return new FileDTOConverter(); }
+
 }
