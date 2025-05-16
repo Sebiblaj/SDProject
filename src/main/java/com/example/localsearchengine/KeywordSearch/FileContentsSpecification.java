@@ -1,7 +1,7 @@
 package com.example.localsearchengine.KeywordSearch;
 
 import com.example.localsearchengine.DTOs.FileSearchCriteria;
-import com.example.localsearchengine.Entites.FileContents;
+import com.example.localsearchengine.Entities.FileContents;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
@@ -33,4 +33,3 @@ public class FileContentsSpecification {
         };
     }
 }
-

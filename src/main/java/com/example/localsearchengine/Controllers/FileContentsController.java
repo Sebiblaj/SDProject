@@ -62,7 +62,7 @@ public class FileContentsController {
                                                                    @RequestParam String fileName,
                                                                    @RequestParam String extension) {
         fileContentsService.deleteFileContents(filePath, fileName, extension);
-        return ResponseEntity.ok("File Contents Deleted");
+        return ResponseEntity.ok("FileEntity Contents Deleted");
     }
 
 }

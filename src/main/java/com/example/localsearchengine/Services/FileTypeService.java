@@ -1,7 +1,7 @@
 package com.example.localsearchengine.Services;
 
 import com.example.localsearchengine.DTOs.FileDTOS.FileTypeDTO;
-import com.example.localsearchengine.Entites.FileType;
+import com.example.localsearchengine.Entities.FileType;
 import com.example.localsearchengine.Persistence.FileTypeRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +49,7 @@ public class FileTypeService {
         if(fileType==null) { return null;}
         fileType.setWeight(fileType.getWeight());
         fileTypeRepository.save(fileType);
-        return "File Type Updated";
+        return "FileEntity Type Updated";
     }
 
     @Transactional

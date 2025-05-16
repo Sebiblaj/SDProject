@@ -1,6 +1,6 @@
 package com.example.localsearchengine.Persistence;
 
-import com.example.localsearchengine.Entites.FileType;
+import com.example.localsearchengine.Entities.FileType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

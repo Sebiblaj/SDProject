@@ -1,7 +1,7 @@
 package com.example.localsearchengine.ServiceExecutors.Convertors;
 
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataDTO;
-import com.example.localsearchengine.Entites.Metadata;
+import com.example.localsearchengine.Entities.Metadata;
 
 import java.time.Instant;
 import java.time.ZoneId;

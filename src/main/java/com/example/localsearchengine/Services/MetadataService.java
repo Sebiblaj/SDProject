@@ -5,8 +5,8 @@ import com.example.localsearchengine.DTOs.MetadataDTOS.KeyDTO;
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataDTO;
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataEntries;
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataPathNameDTO;
-import com.example.localsearchengine.Entites.File;
-import com.example.localsearchengine.Entites.Metadata;
+import com.example.localsearchengine.Entities.FileEntity;
+import com.example.localsearchengine.Entities.Metadata;
 import com.example.localsearchengine.Persistence.FileRepository;
 import com.example.localsearchengine.Persistence.MetadataRepository;
 import com.example.localsearchengine.ServiceExecutors.Convertors.MetadataConvertor;
@@ -121,10 +121,10 @@ public class MetadataService {
 
         boolean success = true;
         if (metadata == null) {
-            File file = fileRepository.findFilesByPathAndFilename(path, filename);
-            if (file != null) {
+            FileEntity fileEntity = fileRepository.findFilesByPathAndFilename(path, filename);
+            if (fileEntity != null) {
                 Metadata newMetadata = new Metadata();
-                newMetadata.setFile(file);
+                newMetadata.setFileEntity(fileEntity);
                 newMetadata.setValues(entries);
 
                 metadataRepository.save(newMetadata);

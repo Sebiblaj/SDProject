@@ -1,27 +1,30 @@
 package com.example.localsearchengine.WidgetsHandler;
 
+import com.example.localsearchengine.DTOs.FileSearchCriteria;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+
 
 @Controller
 @RequestMapping("widgets")
 public class WidgetsController {
 
-     @Autowired
-     private WidgetsRegistry widgetsRegistry;
+    @Autowired
+    private WidgetsService widgetsService;
 
+    @PostMapping("/{widgetName}")
+    public ResponseEntity<String> getWidgetPage(@PathVariable String widgetName,
+                                                @RequestBody(required = false) FileSearchCriteria fileSearchCriteria) {
 
-    @GetMapping("/{widgetName}")
-    public String getWidgetPage(@PathVariable String widgetName) {
-        String widget = widgetsRegistry.hasWidget(widgetName);
-        if (widget != null) {
-            return "widgets/" + widget + ".html" ;
-        } else {
-            return "error/404";
-        }
+        String widget = widgetsService.returnWidget(widgetName,fileSearchCriteria);
+        return widget != null ? ResponseEntity.ok(widget) : ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/{widgetName}")
+    public ResponseEntity<String> getWidgetPage(@PathVariable String widgetName) {
+        String widget = widgetsService.returnWidget(widgetName,new FileSearchCriteria());
+        return widget != null ? ResponseEntity.ok(widget) : ResponseEntity.notFound().build();
+    }
 }

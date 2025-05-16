@@ -1,15 +1,24 @@
 package com.example.localsearchengine.DTOs.MetadataDTOS;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.util.Map;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class MetadataDTO {
 
     Map<String,Object> metadata;
+
+    public MetadataDTO(Map<String, Object> metadata) {
+        this.metadata = metadata;
+    }
+
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String, Object> metadata) {
+        this.metadata = metadata;
+    }
+
+    public MetadataDTO() {}
+
+
 }

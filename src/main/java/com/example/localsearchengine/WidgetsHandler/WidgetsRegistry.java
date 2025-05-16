@@ -1,7 +1,6 @@
 package com.example.localsearchengine.WidgetsHandler;
 
 import jakarta.annotation.PostConstruct;
-import lombok.Getter;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -12,7 +11,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
-@Getter
 @Component
 public class WidgetsRegistry {
 
@@ -40,4 +38,3 @@ public class WidgetsRegistry {
         return null;
     }
 }
-

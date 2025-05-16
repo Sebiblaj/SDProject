@@ -5,7 +5,6 @@ import com.example.localsearchengine.DTOs.FileDTOS.ReturnedFileDTO;
 import com.example.localsearchengine.DTOs.FileDTOS.Tag;
 import com.example.localsearchengine.DTOs.FileDTOS.TagPathNameDTO;
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataEntries;
-import com.example.localsearchengine.Entites.File;
 import com.example.localsearchengine.Services.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -72,7 +71,7 @@ public class FileController {
                                                @RequestParam String extension,
                                                @RequestBody List<MetadataEntries> request) {
         String result = fileService.updateFile(filePath,fileName,extension, request);
-        return !result.equals("File not found") ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
+        return !result.equals("FileEntity not found") ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping(value = "delete")

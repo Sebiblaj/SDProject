@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Code Viewer</title>
+
+    <style>
+        body {
+            background: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        #tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .tab {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            background: #eee;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .tab.active {
+            background: #ddd;
+            font-weight: bold;
+        }
+
+        .code-container {
+            display: none;
+        }
+
+        .code-container.active {
+            display: block;
+        }
+
+        textarea {
+            width: 100%;
+            height: 500px;
+            background: #2d2d2d;
+            color: #f8f8f2;
+            border: none;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            resize: none;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Code Viewer</h2>
+
+<div id="tabs">
+    <div th:each="fileEntity, iter : ${fileEntities}"
+         th:class="'tab' + (${iter.index == 0} ? ' active' : '')"
+         th:attr="data-index=${iter.index}"
+         th:text="${fileEntity.name}"></div>
+</div>
+
+<div id="code-viewers">
+    <div th:each="fileEntity, iter : ${fileEntities}"
+         th:class="'code-container' + (${iter.index == 0} ? ' active' : '')"
+         th:attr="data-index=${iter.index}">
+        <textarea th:text="${fileEntity.content}"></textarea>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tabs = document.querySelectorAll('.tab');
+        const containers = document.querySelectorAll('.code-container');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const index = tab.getAttribute('data-index');
+
+                console.log("Trying to activate tab " + index);
+
+                tabs.forEach(t => t.classList.remove('active'));
+                containers.forEach(c => c.classList.remove('active'));
+
+                tab.classList.add('active');
+                const currentContainer = document.querySelector(`.code-container[data-index="${index}"]`);
+                if (currentContainer) {
+                    currentContainer.classList.add('active');
+                }
+            });
+
+        });
+    });
+</script>
+
+
+</body>
+</html>

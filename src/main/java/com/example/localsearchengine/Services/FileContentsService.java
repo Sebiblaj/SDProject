@@ -6,8 +6,8 @@ import com.example.localsearchengine.DTOs.ContentDTOS.FileSearchResult;
 import com.example.localsearchengine.DTOs.FileSearchCriteria;
 import com.example.localsearchengine.DTOs.LoggerMessage;
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataEntries;
-import com.example.localsearchengine.Entites.File;
-import com.example.localsearchengine.Entites.FileContents;
+import com.example.localsearchengine.Entities.FileEntity;
+import com.example.localsearchengine.Entities.FileContents;
 import com.example.localsearchengine.KeywordSearch.FileContentsSpecification;
 import com.example.localsearchengine.Persistence.FileContentsRepository;
 import com.example.localsearchengine.Persistence.FileRepository;
@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -125,10 +124,10 @@ public class FileContentsService {
                 }
             }
 
-            File file = fileContent.getFile();
-            String filename = file.getFilename();
-            String path = file.getPath();
-            String extension = file.getType().getType();
+            FileEntity fileEntity = fileContent.getFileEntity();
+            String filename = fileEntity.getFilename();
+            String path = fileEntity.getPath();
+            String extension = fileEntity.getType().getType();
 
             long timestamp = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
             metadataService.modifyMetadataForFile(path, filename, extension,
@@ -152,9 +151,9 @@ public class FileContentsService {
                 .map(FileContentDTO::getExtension)
                 .collect(Collectors.toList());
 
-        List<File> files = fileRepository.findFilesByPathAndFilenameAndExtension(paths, filenames, extensions);
+        List<FileEntity> fileEntities = fileRepository.findFilesByPathAndFilenameAndExtension(paths, filenames, extensions);
 
-        Map<String, File> fileMap = files.stream().collect(Collectors.toMap(
+        Map<String, FileEntity> fileMap = fileEntities.stream().collect(Collectors.toMap(
                 file -> file.getPath() + file.getFilename() + file.getType().getType(),
                 file -> file
         ));
@@ -168,16 +167,16 @@ public class FileContentsService {
             evictCache("fileContentsPreview",fileDTO.getPath(),fileDTO.getFilename(),fileDTO.getExtension());
             evictByNameAndPath(List.of(fileDTO.getFilename()), List.of(fileDTO.getPath()));
 
-            File file = fileMap.get(key);
-            if (file != null) {
-                FileContents fileContents = fileContentsRepository.findByFile(file);
+            FileEntity fileEntity = fileMap.get(key);
+            if (fileEntity != null) {
+                FileContents fileContents = fileContentsRepository.findByFileEntity(fileEntity);
                 String cleanContent = fileDTO.getContent().replace("\u0000", "");
 
                 if (fileContents != null) {
                     fileContents.setContents(cleanContent);
                 } else {
                     fileContents = new FileContents();
-                    fileContents.setFile(file);
+                    fileContents.setFileEntity(fileEntity);
                     fileContents.setContents(cleanContent);
                 }
 
@@ -209,9 +208,9 @@ public class FileContentsService {
                 new LoggerMessage.ActivityDetails(
                         fileContentsList.size(),
                         fileContentsList.stream()
-                                .map(f -> f.getFile().getPath() + "/" + f.getFile().getFilename())
+                                .map(f -> f.getFileEntity().getPath() + "/" + f.getFileEntity().getFilename())
                                 .toList(),
-                        "User has set the contents for the files."
+                        "User has set the contents for the fileEntities."
                 )
         ));
 
@@ -227,10 +226,10 @@ public class FileContentsService {
             fileContents.setContents(contentsDTO.getContent());
             fileContentsRepository.save(fileContents);
         } else {
-            File file = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
-            if (file != null) {
+            FileEntity fileEntity = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
+            if (fileEntity != null) {
                 FileContents newFileContents = new FileContents();
-                newFileContents.setFile(file);
+                newFileContents.setFileEntity(fileEntity);
                 newFileContents.setContents(contentsDTO.getContent());
                 fileContentsRepository.save(newFileContents);
             }else{

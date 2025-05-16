@@ -1,14 +1,18 @@
 package com.example.localsearchengine.DTOs.FileDTOS;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class Tag {
 
     private String tag;
+
+    public Tag(String tag) {
+        this.tag = tag;
+    }
+
+    public Tag(){}
+
+    public String getTag() {
+        return tag;
+    }
+    public void setTag(String tag) {}
 }

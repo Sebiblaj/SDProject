@@ -3,9 +3,9 @@ package com.example.localsearchengine.Services;
 import com.example.localsearchengine.DTOs.FileDTOS.*;
 import com.example.localsearchengine.DTOs.LoggerMessage;
 import com.example.localsearchengine.DTOs.MetadataDTOS.MetadataEntries;
-import com.example.localsearchengine.Entites.File;
-import com.example.localsearchengine.Entites.FileTag;
-import com.example.localsearchengine.Entites.FileType;
+import com.example.localsearchengine.Entities.FileEntity;
+import com.example.localsearchengine.Entities.FileTag;
+import com.example.localsearchengine.Entities.FileType;
 import com.example.localsearchengine.Persistence.FileRepository;
 import com.example.localsearchengine.Persistence.FileTagsRepository;
 import com.example.localsearchengine.Persistence.FileTypeRepository;
@@ -93,18 +93,18 @@ public class FileService {
 
     @Cacheable(value = "file", key = "{#filePath, #fileName, #extension}")
     public ReturnedFileDTO getFile(String fileName,String filePath,String extension){
-        File file = fileRepository.getFileByPathAndFilenameAndExtension(filePath, fileName,extension);
+        FileEntity fileEntity = fileRepository.getFileByPathAndFilenameAndExtension(filePath, fileName,extension);
 
         sendMessage(new LoggerMessage(
                 Timestamp.valueOf(LocalDateTime.now()),
                 "sebir",
                 new ActivityDetails(
-                        file != null ? 1 : 0,
-                        file != null ? new ArrayList<>(List.of(file.getPath() + "/" + file.getFilename())) : new ArrayList<>(),
-                        "User has accessed the file."
+                        fileEntity != null ? 1 : 0,
+                        fileEntity != null ? new ArrayList<>(List.of(fileEntity.getPath() + "/" + fileEntity.getFilename())) : new ArrayList<>(),
+                        "User has accessed the fileEntity."
                 )
         ));
-        return fileConvertor.convert(file);
+        return fileConvertor.convert(fileEntity);
     }
 
     @Transactional
@@ -120,16 +120,16 @@ public class FileService {
             List<String> filenames = fileDTOs.stream().map(FileDTO::getFilename).toList();
             List<String> paths = fileDTOs.stream().map(FileDTO::getPath).toList();
 
-            List<File> existingFiles = fileRepository.findFilesByPathAndFilename(paths, filenames);
+            List<FileEntity> existingFileEntities = fileRepository.findFilesByPathAndFilename(paths, filenames);
 
-            Set<String> existingFileKeys = existingFiles.stream()
+            Set<String> existingFileKeys = existingFileEntities.stream()
                     .map(file -> file.getPath() + "|" + file.getFilename() + "|" + file.getType().getType())
                     .collect(Collectors.toSet());
 
             Map<String, FileType> fileTypeMap = fileTypeRepository.findAll().stream()
                     .collect(Collectors.toMap(FileType::getType, fileType -> fileType));
 
-            List<File> newFiles = new ArrayList<>();
+            List<FileEntity> newFileEntities = new ArrayList<>();
 
             for (FileDTO fileDTO : fileDTOs) {
                 String key = fileDTO.getPath() + "|" + fileDTO.getFilename() + "|" + fileDTO.getType();
@@ -137,7 +137,7 @@ public class FileService {
                     continue;
                 }
 
-                Cache cache1 = cacheManager.getCache("getFile");
+                Cache cache1 = cacheManager.getCache("getFileEntity");
                 if(cache1 != null && cache1.get(fileDTO.getFilename()) != null){
                     cache1.evict(fileDTO.getFilename());
                 }
@@ -147,29 +147,29 @@ public class FileService {
                     cache2.evict(fileDTO.getType());
                 }
 
-                File newFile = fileDTOConverter.convert(fileDTO);
+                FileEntity newFileEntity = fileDTOConverter.convert(fileDTO);
 
                 FileType fileType = fileTypeMap.get(fileDTO.getType());
                 if (fileType == null) {
                     success = false;
                     break;
                 }
-                newFile.setType(fileType);
-                newFiles.add(newFile);
+                newFileEntity.setType(fileType);
+                newFileEntities.add(newFileEntity);
             }
 
-            if (newFiles.isEmpty()) {
+            if (newFileEntities.isEmpty()) {
                 success = false;
             }else{
 
-                fileRepository.saveAll(newFiles);
+                fileRepository.saveAll(newFileEntities);
             }
 
             String description;
             List<String> filesToAdd = new ArrayList<>();
             if (success) {
                 description = "User has set multiple files into the system.";
-                filesToAdd =newFiles.stream().map(f ->  f.getPath() + "/"+f.getFilename()).toList();
+                filesToAdd = newFileEntities.stream().map(f ->  f.getPath() + "/"+f.getFilename()).toList();
             }else{
                 description = "User has tried to set multiple files into the system but failed";
             }
@@ -186,9 +186,9 @@ public class FileService {
             return "Files added successfully";
         }else if (payload instanceof Map) {
             FileDTO fileDTO = objectMapper.convertValue(payload, FileDTO.class);
-            File newFile = fileDTOConverter.convert(fileDTO);
+            FileEntity newFileEntity = fileDTOConverter.convert(fileDTO);
 
-            Cache cache1 = cacheManager.getCache("getFile");
+            Cache cache1 = cacheManager.getCache("getFileEntity");
             if(cache1 != null && cache1.get(fileDTO.getFilename()) != null){
                 cache1.evict(fileDTO.getFilename());
             }
@@ -198,19 +198,19 @@ public class FileService {
                 cache2.evict(fileDTO.getType());
             }
 
-            fileRepository.save(newFile);
+            fileRepository.save(newFileEntity);
 
             sendMessage(new LoggerMessage(
                     Timestamp.valueOf(LocalDateTime.now()),
                     "sebir",
                     new ActivityDetails(
                             1,
-                            new ArrayList<>(List.of(newFile.getPath() + "/" + newFile.getFilename())),
+                            new ArrayList<>(List.of(newFileEntity.getPath() + "/" + newFileEntity.getFilename())),
                             "User has set a file into the system."
                     )
             ));
 
-            return "File added successfully";
+            return "FileEntity added successfully";
 
         }
         return null;
@@ -218,9 +218,9 @@ public class FileService {
 
     @Transactional
     public String updateFile(String path,String filename,String extension, List<MetadataEntries> request) {
-        File oldFile = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
+        FileEntity oldFileEntity = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
         boolean success = true;
-        if (oldFile == null) {
+        if (oldFileEntity == null) {
             success = false;
         }else {
 
@@ -229,12 +229,12 @@ public class FileService {
                 String newValue = entry.getValue();
 
                 try {
-                    Field field = File.class.getDeclaredField(fieldName);
+                    Field field = FileEntity.class.getDeclaredField(fieldName);
                     field.setAccessible(true);
 
                     Object convertedValue = convertValue(field.getType(), newValue);
 
-                    field.set(oldFile, convertedValue);
+                    field.set(oldFileEntity, convertedValue);
                 } catch (NoSuchFieldException | IllegalAccessException e) {
                     success = false;
                 }
@@ -243,7 +243,7 @@ public class FileService {
 
         evictCache(path,filename,extension);
         Objects.requireNonNull(cacheManager.getCache("files")).clear();
-        Cache cache1 = cacheManager.getCache("getFile");
+        Cache cache1 = cacheManager.getCache("getFileEntity");
         if(cache1 != null && cache1.get(filename) != null){
             cache1.evict(filename);
         }
@@ -258,9 +258,9 @@ public class FileService {
         String fileName;
         if(success){
             description = "User has updated all the files from the system.";
-            filePath = oldFile.getPath();
-            fileName = oldFile.getFilename();
-            fileRepository.save(oldFile);
+            filePath = oldFileEntity.getPath();
+            fileName = oldFileEntity.getFilename();
+            fileRepository.save(oldFileEntity);
         }else{
             description = "User has tried to update the file " + filename + " but file does not exist.";
             filePath = path;
@@ -276,19 +276,19 @@ public class FileService {
                         description
         )));
 
-        return success ? "File updated successfully" : "File not found";
+        return success ? "FileEntity updated successfully" : "FileEntity not found";
     }
 
     @Cacheable(value = "getFile",key = "#filename")
     public List<ReturnedFileDTO> searchFilesByName(String filename) {
 
-        List<File> files = fileRepository.findAllByFilename(filename);
+        List<FileEntity> fileEntities = fileRepository.findAllByFilename(filename);
         List<ReturnedFileDTO> returnedFiles = new ArrayList<>();
-        if ( files == null) {
+        if ( fileEntities == null) {
             return returnedFiles; }
-        files.forEach(file -> returnedFiles.add(fileConvertor.convert(file)));
+        fileEntities.forEach(file -> returnedFiles.add(fileConvertor.convert(file)));
 
-        System.out.println("returned files: " + files);
+        System.out.println("returned fileEntities: " + fileEntities);
         sendMessage(new LoggerMessage(
                 Timestamp.valueOf(LocalDateTime.now()),
                 "sebir",
@@ -297,7 +297,7 @@ public class FileService {
                         returnedFiles.stream()
                                 .map(f-> f.getPath() + "/"+f.getFilename())
                                 .collect(Collectors.toList()),
-                        "User has accessed all the files with the same name in the system."
+                        "User has accessed all the fileEntities with the same name in the system."
                 )
         ));
 
@@ -306,10 +306,10 @@ public class FileService {
 
     @Cacheable(value = "ext",key = "#ext")
     public List<ReturnedFileDTO> searchFilesByExtension(String ext) {
-        List<File> files = fileRepository.findAllByExtension(ext);
+        List<FileEntity> fileEntities = fileRepository.findAllByExtension(ext);
         List<ReturnedFileDTO> returnedFiles = new ArrayList<>();
-        if (files.isEmpty()) { return returnedFiles; }
-        files.forEach(file -> {
+        if (fileEntities.isEmpty()) { return returnedFiles; }
+        fileEntities.forEach(file -> {
             returnedFiles.add(fileConvertor.convert(file));
         });
 
@@ -321,7 +321,7 @@ public class FileService {
                         returnedFiles.stream()
                                 .map(f-> f.getPath() + "/"+f.getFilename())
                                 .collect(Collectors.toList()),
-                        "User has accessed all the files with the same extension in the system."
+                        "User has accessed all the fileEntities with the same extension in the system."
                 )
         ));
         return returnedFiles;
@@ -334,7 +334,7 @@ public class FileService {
         for(PathAndName pathAndName : files){
             evictCache(pathAndName.getPath(),pathAndName.getName(),pathAndName.getExtension());
             Objects.requireNonNull(cacheManager.getCache("files")).clear();
-            Cache cache1 = cacheManager.getCache("getFile");
+            Cache cache1 = cacheManager.getCache("getFileEntity");
             if(cache1 != null && cache1.get(pathAndName.getName()) != null){
                 cache1.evict(pathAndName.getName());
             }
@@ -379,17 +379,17 @@ public class FileService {
 
     @Transactional
     public void deleteByPathAndFilename() {
-        List<File> files = fileRepository.findAll();
-        int size = files.size();
-        List<String> names = files.stream().map(File::getFilename).toList();
-        List<String> paths = files.stream().map(File::getPath).toList();
-        List<String> extensions = files.stream().map(File::getType).map(FileType::getType).toList();
+        List<FileEntity> fileEntities = fileRepository.findAll();
+        int size = fileEntities.size();
+        List<String> names = fileEntities.stream().map(FileEntity::getFilename).toList();
+        List<String> paths = fileEntities.stream().map(FileEntity::getPath).toList();
+        List<String> extensions = fileEntities.stream().map(FileEntity::getType).map(FileType::getType).toList();
 
         for(int i = 0 ; i< names.size() ; i++){
             deleteAllTagsForFile(paths.get(i), names.get(i),extensions.get(i));
             evictCache(paths.get(i), names.get(i),extensions.get(i));
-            Objects.requireNonNull(cacheManager.getCache("files")).clear();
-            Cache cache1 = cacheManager.getCache("getFile");
+            Objects.requireNonNull(cacheManager.getCache("fileEntities")).clear();
+            Cache cache1 = cacheManager.getCache("getFileEntity");
             if(cache1 != null && cache1.get(names.get(i)) != null){
                 cache1.evict(names.get(i));
             }
@@ -408,16 +408,16 @@ public class FileService {
                 new ActivityDetails(
                         size,
                         names,
-                        "User has deleted all the files in the system."
+                        "User has deleted all the fileEntities in the system."
                 )
         ));
     }
 
     public List<ReturnedFileDTO> findBySizeInterval(String min, String max) {
-        List<File> files = fileRepository.findByFileSizeBetween(Long.parseLong(min), Long.parseLong(max));
+        List<FileEntity> fileEntities = fileRepository.findByFileSizeBetween(Long.parseLong(min), Long.parseLong(max));
         List<ReturnedFileDTO> returnedFiles = new ArrayList<>();
-        if (files.isEmpty()) { return returnedFiles; }
-        files.forEach(file -> {
+        if (fileEntities.isEmpty()) { return returnedFiles; }
+        fileEntities.forEach(file -> {
             returnedFiles.add(fileConvertor.convert(file));
         });
 
@@ -429,7 +429,7 @@ public class FileService {
                         returnedFiles.stream()
                                 .map(f -> f.getPath() + "/"+f.getFilename())
                                 .collect(Collectors.toList()),
-                        "User has accessed the files within interval [" + min + ", " + max + "] from the system."
+                        "User has accessed the fileEntities within interval [" + min + ", " + max + "] from the system."
                 )
         ));
 
@@ -494,26 +494,26 @@ public class FileService {
 
     @Cacheable(value = "filesByTag",key = "#tags")
     public List<ReturnedFileDTO> getFilesByTag(List<String> tags) {
-        Set<File> uniqueFiles = new HashSet<>();
+        Set<FileEntity> uniqueFileEntities = new HashSet<>();
         for (String tag : tags) {
             Set<FileTag> fileTags = fileTagsRepository.findByTags(tag);
             if (fileTags == null) { continue; }
-            uniqueFiles.addAll(fileRepository.findFilesByTags(fileTags));
+            uniqueFileEntities.addAll(fileRepository.findFilesByTags(fileTags));
         }
 
         sendMessage(new LoggerMessage(
                 Timestamp.valueOf(LocalDateTime.now()),
                 "sebir",
                 new ActivityDetails(
-                        uniqueFiles.size(),
-                        uniqueFiles.stream()
+                        uniqueFileEntities.size(),
+                        uniqueFileEntities.stream()
                                 .map(f -> f.getPath() + "/"+f.getFilename())
                                 .collect(Collectors.toList()),
                         "User has accessed the files based on the provided tags" + tags
                 )
         ));
 
-        return uniqueFiles.stream()
+        return uniqueFileEntities.stream()
                 .map(file -> fileConvertor.convert(file))
                 .collect(Collectors.toList());
     }
@@ -531,13 +531,13 @@ public class FileService {
             cache1.evict(tags);
         }
 
-        File oldFile = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
+        FileEntity oldFileEntity = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
         boolean success = true;
 
-        if (oldFile == null) {
+        if (oldFileEntity == null) {
             success = false;
         } else {
-            Set<FileTag> updatedTags = new HashSet<>(oldFile.getTags());
+            Set<FileTag> updatedTags = new HashSet<>(oldFileEntity.getTags());
 
             for (Tag tag : tags) {
                 FileTag fileTag = fileTagsRepository.findByTag(tag.getTag().toLowerCase());
@@ -545,15 +545,15 @@ public class FileService {
                 if (fileTag == null) {
                     fileTag = new FileTag();
                     fileTag.setTag(tag.getTag().toLowerCase());
-                    fileTag.setFiles(new HashSet<>());
+                    fileTag.setFileEntities(new HashSet<>());
                 }
 
-                fileTag.getFiles().add(oldFile);
+                fileTag.getFileEntities().add(oldFileEntity);
                 updatedTags.add(fileTag);
             }
 
-            oldFile.setTags(updatedTags);
-            fileRepository.save(oldFile);
+            oldFileEntity.setTags(updatedTags);
+            fileRepository.save(oldFileEntity);
         }
 
         String description;
@@ -603,10 +603,10 @@ public class FileService {
             cache1.evict(tags);
         }
 
-        File oldFile = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
+        FileEntity oldFileEntity = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
         boolean success = true;
-        if (oldFile != null) {
-            Set<FileTag> fileTags = oldFile.getTags();
+        if (oldFileEntity != null) {
+            Set<FileTag> fileTags = oldFileEntity.getTags();
 
             Set<FileTag> tagsToRemove = fileTags.stream()
                     .filter(fileTag -> tags.stream()
@@ -615,13 +615,13 @@ public class FileService {
 
             fileTags.removeAll(tagsToRemove);
             tagsToRemove.forEach(fileTag -> {
-                if (fileTag.getFiles().isEmpty()) {
+                if (fileTag.getFileEntities().isEmpty()) {
                     fileTagsRepository.delete(fileTag);
                 }
             });
 
-            oldFile.setTags(fileTags);
-            fileRepository.save(oldFile);
+            oldFileEntity.setTags(fileTags);
+            fileRepository.save(oldFileEntity);
         }else{
             success = false;
         }
@@ -653,12 +653,12 @@ public class FileService {
         }
         Objects.requireNonNull(cacheManager.getCache("allTags")).clear();
 
-        File oldFile = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
+        FileEntity oldFileEntity = fileRepository.getFileByPathAndFilenameAndExtension(path, filename,extension);
         String description;
         boolean succeeded = false;
-        if (oldFile != null) {
-            oldFile.getTags().clear();
-            fileRepository.save(oldFile);
+        if (oldFileEntity != null) {
+            oldFileEntity.getTags().clear();
+            fileRepository.save(oldFileEntity);
             succeeded = true;
         }
         if (!succeeded) {

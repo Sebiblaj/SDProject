@@ -1,10 +1,10 @@
 package com.example.localsearchengine.ServiceExecutors.Convertors;
 
 import com.example.localsearchengine.DTOs.FileDTOS.FileDTO;
-import com.example.localsearchengine.Entites.File;
-import com.example.localsearchengine.Entites.FileTag;
-import com.example.localsearchengine.Entites.FileType;
-import com.example.localsearchengine.Entites.Metadata;
+import com.example.localsearchengine.Entities.FileEntity;
+import com.example.localsearchengine.Entities.FileTag;
+import com.example.localsearchengine.Entities.FileType;
+import com.example.localsearchengine.Entities.Metadata;
 import com.example.localsearchengine.Persistence.FileTagsRepository;
 import com.example.localsearchengine.Persistence.FileTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
-public class FileDTOConverter implements Convertor<FileDTO, File> {
+public class FileDTOConverter implements Convertor<FileDTO, FileEntity> {
 
     @Autowired
     private FileTagsRepository fileTagsRepository;
@@ -25,13 +25,13 @@ public class FileDTOConverter implements Convertor<FileDTO, File> {
     private FileTypeRepository fileTypeRepository;
 
     @Override
-    public File convert(FileDTO fileDTO) {
-        File newFile = new File();
-        newFile.setFilename(fileDTO.getFilename());
-        newFile.setPath(fileDTO.getPath());
+    public FileEntity convert(FileDTO fileDTO) {
+        FileEntity newFileEntity = new FileEntity();
+        newFileEntity.setFilename(fileDTO.getFilename());
+        newFileEntity.setPath(fileDTO.getPath());
 
         FileType fileType = fileTypeRepository.getFileTypeByType(fileDTO.getType());
-        newFile.setType(fileType);
+        newFileEntity.setType(fileType);
 
         Set<FileTag> tags = new HashSet<>();
         for (String tagName : fileDTO.getTags()) {
@@ -39,14 +39,14 @@ public class FileDTOConverter implements Convertor<FileDTO, File> {
             if (tag == null) {
                 tag = new FileTag();
                 tag.setTag(tagName);
-                tag.setFiles(new HashSet<>());
+                tag.setFileEntities(new HashSet<>());
                 fileTagsRepository.save(tag);
             }
-            tag.getFiles().add(newFile);
+            tag.getFileEntities().add(newFileEntity);
             tags.add(tag);
         }
 
-        newFile.setTags(tags);
+        newFileEntity.setTags(tags);
 
         Map<String, String> stringMetadata = fileDTO.getMetadata().entrySet()
                 .stream()
@@ -54,12 +54,11 @@ public class FileDTOConverter implements Convertor<FileDTO, File> {
                         Map.Entry::getKey,
                         e -> e.getValue().toString()
                 ));
-        Metadata metadata = new Metadata(null, stringMetadata, newFile);
+        Metadata metadata = new Metadata(null, stringMetadata, newFileEntity);
 
-        newFile.setMetadata(metadata);
+        newFileEntity.setMetadata(metadata);
 
-        System.out.println("File Converted successfully");
-        return newFile;
+        System.out.println("FileEntity Converted successfully");
+        return newFileEntity;
     }
 }
-

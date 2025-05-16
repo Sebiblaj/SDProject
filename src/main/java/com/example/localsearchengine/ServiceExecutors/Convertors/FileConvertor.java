@@ -1,20 +1,17 @@
 package com.example.localsearchengine.ServiceExecutors.Convertors;
 
 import com.example.localsearchengine.DTOs.FileDTOS.ReturnedFileDTO;
-import com.example.localsearchengine.Entites.File;
+import com.example.localsearchengine.Entities.FileEntity;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class FileConvertor implements Convertor<File,ReturnedFileDTO> {
+public class FileConvertor implements Convertor<FileEntity,ReturnedFileDTO> {
 
     @Override
-    public ReturnedFileDTO convert(File file) {
-        if(file == null) return null;
+    public ReturnedFileDTO convert(FileEntity fileEntity) {
+        if(fileEntity == null) return null;
         ReturnedFileDTO returnedFileDTO = new ReturnedFileDTO();
-        returnedFileDTO.setPath(file.getPath());
-        returnedFileDTO.setFilename(file.getFilename());
-        returnedFileDTO.setExtension(file.getType().getType());
+        returnedFileDTO.setPath(fileEntity.getPath());
+        returnedFileDTO.setFilename(fileEntity.getFilename());
+        returnedFileDTO.setExtension(fileEntity.getType().getType());
         return returnedFileDTO;
     }
 }
