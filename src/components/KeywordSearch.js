@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './KeywordSearch.css';
-import { getFileContentsByPathAndNameAndKeyword, getFilesForTags, getLatestLogsForKeyword } from '../Requests/HTTPRequests'; 
+import { getFileContentsByPathAndNameAndKeyword, getFilesForTags, getLatestLogsForKeyword, getSpellingSuggestions } from '../Requests/HTTPRequests'; 
 import debounce from 'lodash.debounce';
 import FileCard from '../components/Reusable/FileCard';
+import SpellingSuggestions from './SpellingSuggestions';
 
 const KeywordSearch = () => {
   const [files, setFiles] = useState([]);
-  const [error, setError] = useState('');
   const [keyword, setKeyword] = useState('');
   const [tag, setTag] = useState('');
   const [path, setPath] = useState(''); 
@@ -14,6 +14,8 @@ const KeywordSearch = () => {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [queries, setQueries] = useState([]);
+  const [keywordSpellingSuggestions, setKeywordSpellingSuggestions] = useState(null);
+  const [filenameSpellingSuggestions, setFilenameSpellingSuggestions] = useState(null);
 
   const keywordRef = useRef(keyword);
   const tagRef = useRef(tag);
@@ -43,32 +45,27 @@ const KeywordSearch = () => {
     if (currentKeyword.trim() !== '') {
       getFileContentsByPathAndNameAndKeyword(currentPath.trim(), currentFilename.trim(), currentKeyword.trim())
         .then((data) => {
-          console.log('Files found by keyword:', data);
           setFiles(data.data);
           setSearching(false); 
           setLoading(false);
         })
         .catch(() => {
-          setError('Failed to search files by keyword.');
           setLoading(false);
           setSearching(false);
         });
     } else if (currentTag.trim() !== '') {
       getFilesForTags(currentTag.trim())
         .then((data) => {
-          console.log('Files found by tag:', data);
           setFiles(data.data);
           setSearching(false);
           setLoading(false);
         })
         .catch(() => {
-          setError('Failed to search files by tag.');
           setLoading(false);
           setSearching(false);
         });
     } else {
       setLoading(false);
-      setError('Please enter a keyword or tag to search.');
       setSearching(false);
     }
   };
@@ -81,6 +78,40 @@ const KeywordSearch = () => {
     });
   };
 
+  const fetchSpellingSuggestions = (term, setterFunction) => {
+    if (!term || term.trim() === '') {
+      setterFunction(null);
+      return;
+    }
+
+    getSpellingSuggestions(term.trim())
+      .then(spellingResponse => {
+        if(spellingResponse.status === 200 && spellingResponse.data && spellingResponse.data.length > 0){
+          setterFunction(spellingResponse.data);
+        }else{
+          setterFunction(null);
+        }
+      })
+      .catch(err =>{
+        setterFunction(null);
+        console.log("Error");
+      });
+  };
+
+  const debouncedFetchSpellingKeyword = useCallback(
+    debounce((term) => {
+      fetchSpellingSuggestions(term, setKeywordSpellingSuggestions);
+    }, 1000),
+    []
+  );
+
+  const debouncedFetchSpellingFilename = useCallback(
+    debounce((term) => {
+      fetchSpellingSuggestions(term, setFilenameSpellingSuggestions);
+    }, 1000),
+    []
+  );
+
   const debouncedFetchFiles = useCallback(
     debounce(() => {
       fetchFiles();
@@ -91,17 +122,22 @@ const KeywordSearch = () => {
   const handleKeywordChange = (e) => {
     const value = e.target.value;
     setKeyword(value);
-    setError('');
-    setFiles([]);  
+    setFiles([]);
+    
+    if (value.trim() === '') {
+      setSearching(false);
+      setKeywordSpellingSuggestions(null);
+      return;
+    }
+    
     setSearching(true);
     debouncedFetchFiles();
+    debouncedFetchSpellingKeyword(value);
   };
 
   const handleTagChange = (e) => {
     const value = e.target.value;
     setTag(value);
-    console.log("The tag is ", value);
-    setError('');
     setFiles([]);  
     setSearching(true);
     debouncedFetchFiles(); 
@@ -110,7 +146,6 @@ const KeywordSearch = () => {
   const handlePathChange = (e) => {
     const value = e.target.value;
     setPath(value);
-    setError('');
     setFiles([]);  
     setSearching(true);
     debouncedFetchFiles(); 
@@ -119,10 +154,29 @@ const KeywordSearch = () => {
   const handleFilenameChange = (e) => {
     const value = e.target.value;
     setFilename(value);
-    setError('');
-    setFiles([]);  
+    setFiles([]);
+    
+    if (value.trim() === '') {
+      setSearching(false);
+      setFilenameSpellingSuggestions(null);
+      return;
+    }
+    
     setSearching(true);
-    debouncedFetchFiles(); 
+    debouncedFetchFiles();
+    debouncedFetchSpellingFilename(value);
+  };
+
+  const handleKeywordSuggestionSelect = (suggestion) => {
+    setKeyword(suggestion);
+    setKeywordSpellingSuggestions(null);
+    debouncedFetchFiles();
+  };
+
+  const handleFilenameSuggestionSelect = (suggestion) => {
+    setFilename(suggestion);
+    setFilenameSpellingSuggestions(null);
+    debouncedFetchFiles();
   };
 
   useEffect(() => {
@@ -141,16 +195,23 @@ const KeywordSearch = () => {
     <div className="search-container">
       <h2 className="search-title">Search Files</h2>
 
-      {error && <div className="error">{error}</div>}
-
       <div className="search-bar">
-        <input
-          type="text"
-          value={keyword}
-          onChange={handleKeywordChange}
-          placeholder="Search for a keyword..."
-          className="search-input"
-        />
+        <div className="input-container">
+          <input
+            type="text"
+            value={keyword}
+            onChange={handleKeywordChange}
+            placeholder="Search for a keyword..."
+            className="search-input"
+          />
+          {keywordSpellingSuggestions && (
+            <SpellingSuggestions
+              suggestions={keywordSpellingSuggestions}
+              onSelect={handleKeywordSuggestionSelect}
+              onClose={() => setKeywordSpellingSuggestions(null)}
+            />
+          )}
+        </div>
 
         <input
           type="text"
@@ -168,13 +229,22 @@ const KeywordSearch = () => {
           className="search-input"
         />
 
-        <input
-          type="text"
-          value={filename}
-          onChange={handleFilenameChange}
-          placeholder="Enter filename (optional)..."
-          className="search-input"
-        />
+        <div className="input-container">
+          <input
+            type="text"
+            value={filename}
+            onChange={handleFilenameChange}
+            placeholder="Enter filename (optional)..."
+            className="search-input"
+          />
+          {filenameSpellingSuggestions && (
+            <SpellingSuggestions
+              suggestions={filenameSpellingSuggestions}
+              onSelect={handleFilenameSuggestionSelect}
+              onClose={() => setFilenameSpellingSuggestions(null)}
+            />
+          )}
+        </div>
       </div>
 
       {loading && files.length === 0 && <div className="loading">Loading...</div>}

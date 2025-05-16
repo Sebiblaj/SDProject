@@ -2,13 +2,18 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "dependencies": {
+    "@algolia/autocomplete-core": "^1.19.1",
+    "@algolia/autocomplete-preset-algolia": "^1.19.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
+    "algoliasearch": "^5.24.0",
     "axios": "^1.8.4",
     "lodash.debounce": "^4.0.8",
+    "monaco-editor": "^0.52.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router": "^7.5.1",
@@ -20,8 +25,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
+    "eject": "react-scripts eject",
+    "lint": "eslint"
+    },
   "eslintConfig": {
     "extends": [
       "react-app",

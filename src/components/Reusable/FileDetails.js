@@ -1,12 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { getMetadataForFile, getFileContentsByPathAndName, getTagsForFile } from '../../Requests/HTTPRequests';
+import './FileDetails.css';
 
-const FileDetails = ({ file }) => {
+const FileDetails = ({ file, onClose }) => {
   const [metadata, setMetadata] = useState({});
   const [tags, setTags] = useState([]);
   const [fileContents, setFileContents] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [imageData, setImageData] = useState(null);
+
+  useEffect(() => {
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleEscKey);
+    return () => {
+      window.removeEventListener('keydown', handleEscKey);
+    };
+  }, [onClose]);
 
   useEffect(() => {
     const fetchMetadata = async () => {
@@ -14,19 +29,25 @@ const FileDetails = ({ file }) => {
         setLoading(true);
         const decodedPath = decodeURIComponent(file.path);
         const decodedFilename = decodeURIComponent(file.filename);
+        const decodedExtension = decodeURIComponent(file.extension);
 
-        const metadataResponse = await getMetadataForFile(decodedPath, decodedFilename);
+        const metadataResponse = await getMetadataForFile(decodedPath, decodedFilename, decodedExtension);
         const tagsResponse = await getTagsForFile(decodedPath, decodedFilename);
-        const contentsResponse = await getFileContentsByPathAndName(decodedPath, decodedFilename);
-
-        console.log("Metadata is ",metadataResponse)
+        const contentsResponse = await getFileContentsByPathAndName(decodedPath, decodedFilename, decodedExtension);
 
         setMetadata(metadataResponse.data.metadata || {});
         setTags(tagsResponse.data ? tagsResponse.data.map(t => t.tag) : []);
-        setFileContents(contentsResponse.data || '');
+        
+        const content = contentsResponse.data || '';
+        if (content.includes('--- BASE64 IMAGE CONTENT ---')) {
+          const base64Data = content.split('--- BASE64 IMAGE CONTENT ---')[1].trim();
+          setImageData(base64Data);
+          setFileContents(content.split('--- BASE64 IMAGE CONTENT ---')[0].trim());
+        } else {
+          setFileContents(content);
+        }
       } catch (err) {
         console.error(err);
-        setError('Error fetching file details');
       } finally {
         setLoading(false);
       }
@@ -35,8 +56,8 @@ const FileDetails = ({ file }) => {
     fetchMetadata();
   }, [file]);
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading) return <div className="loading">Loading...</div>;
+  if (error) return <div className="error">{error}</div>;
 
   const displayFields = {
     "Filename": metadata.filename,
@@ -52,36 +73,55 @@ const FileDetails = ({ file }) => {
     "File Hash": metadata.filehash,
   };
 
+  const isImageFile = ['jpg', 'jpeg', 'png', 'bmp', 'gif'].includes(file.extension?.toLowerCase());
+
   return (
     <div className="file-details-container">
-      <h2>File Properties</h2>
+      <button className="close-button" onClick={onClose}>×</button>
+      <div className="metadata-panel">
+        <h2>Properties</h2>
+        <table className="metadata-table">
+          <tbody>
+            {Object.entries(displayFields).map(([label, value]) => (
+              value && (
+                <tr key={label}>
+                  <td className="metadata-label">{label}</td>
+                  <td className="metadata-value">{value}</td>
+                </tr>
+              )
+            ))}
+          </tbody>
+        </table>
 
-      <table className="metadata-table">
-        <tbody>
-          {Object.entries(displayFields).map(([label, value]) => (
-            value && (
-              <tr key={label}>
-                <td className="metadata-label"><strong>{label}:</strong></td>
-                <td className="metadata-value">{value}</td>
-              </tr>
-            )
-          ))}
-        </tbody>
-      </table>
+        {tags.length > 0 && (
+          <div className="file-tags">
+            <h3>Tags</h3>
+            <div className="tag-list">
+              {tags.map((tag, index) => (
+                <span key={index} className="tag">{tag}</span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
-      {tags.length > 0 && (
-        <div className="file-tags">
-          <h3>Tags:</h3>
-          <p>{tags.join(', ')}</p>
-        </div>
-      )}
-
-      {fileContents && (
+      <div className="content-panel">
+        <h3>Contents</h3>
         <div className="file-contents">
-          <h3>File Contents:</h3>
-          <pre>{fileContents}</pre>
+          {isImageFile && imageData ? (
+            <div className="image-container">
+              <img 
+                src={`data:image/${file.extension.toLowerCase()};base64,${imageData}`}
+                alt={file.filename}
+                className="preview-image"
+              />
+              <pre className="image-metadata">{fileContents}</pre>
+            </div>
+          ) : (
+            <pre>{fileContents}</pre>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

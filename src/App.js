@@ -88,8 +88,7 @@ function App() {
         {isModalOpen && selectedFile && (
           <div className="file-details-overlay open" onClick={closeModal}>
             <div className="file-details-modal" onClick={(e) => e.stopPropagation()}>
-              <button className="close-btn" onClick={closeModal}>✖</button>
-              <FileDetails file={selectedFile} />
+              <FileDetails file={selectedFile} onClose={closeModal} />
             </div>
           </div>
         )}

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import './QueryLogger.css'
 
 function QueryLogger() {
@@ -7,15 +6,19 @@ function QueryLogger() {
 
   const handleFileRead = () => {
     const fileUrl = 'http://localhost:8081/reports/SystemLogger.txt';
-
-    axios.get(fileUrl)
+  
+    fetch(fileUrl)
       .then(response => {
-        setFileContent(response.data);
+        return response.text(); 
+      })
+      .then(data => {
+        setFileContent(data);
       })
       .catch(error => {
         setFileContent(`Error loading file: ${error.message}`);
       });
   };
+  
 
   useEffect(() => {
     handleFileRead();

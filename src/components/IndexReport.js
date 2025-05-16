@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 
 function IndexReport() {
   const [format, setFormat] = useState('txt');
@@ -19,15 +18,22 @@ function IndexReport() {
   const handleFileRead = () => {
     const fileName = filePaths[format];
     const fileUrl = `http://localhost:8081/reports/${fileName}`;
-
-    axios.get(fileUrl)
+  
+    fetch(fileUrl)
       .then(response => {
-        setFileContent(response.data);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.text(); 
+      })
+      .then(data => {
+        setFileContent(data);
       })
       .catch(error => {
         setFileContent(`Error loading file: ${error.message}`);
       });
   };
+  
 
   const renderCSVTable = () => {
     const rows = fileContent.split('\n').filter(row => row.trim() !== '');
